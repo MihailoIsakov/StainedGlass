@@ -6,35 +6,44 @@ import matplotlib.tri as tri
 from plotter import plot_triangles
 
 
-def in_trinagle(point, triangle):
-    """
-    Check if point is inside the triangle
-    :param point: two element numpy.array, p = [x,y]
-    :param triangle: 2x3 numpy.array of the triangle vertices
-    :return: True if the point is in the triangle
-    """
-    mat = np.copy(triangle[:, 1:])
-    mat[:,0] -= triangle[:,0]
-    mat[:,1] -= triangle[:,0]
-    p = point - triangle[:,0]
+def triangle_sum(img, tr):
+    north = np.floor(np.amax(tr[1,:])).astype(int)
+    south = np.ceil (np.amin(tr[1,:])).astype(int)
+    east  = np.floor(np.amax(tr[0,:])).astype(int)
+    west  = np.ceil (np.amin(tr[0,:])).astype(int)
 
-    x = np.linalg.solve(mat, p)
-
-    return 0 <= x[0] <= 1 and 0 <= x[1] <= 1 and x[0] + x[1] <= 1
-
-
-def color_sum(img, tri):
-    min = np.floor(np.amin(tri, axis = 1)).astype(int)
-    max = np.ceil(np.amax(tri, axis = 1)).astype(int)
-
-    sum = np.array([0, 0, 0])
     num_of_pixels = 0
+    sum = np.array([0, 0, 0])
 
-    for x in range(min[0], max[0] + 1):
-        for y in range(min[1], max[1] + 1):
-            if in_trinagle([x, y], tri):
-                sum += img[y, x]
-                num_of_pixels += 1
+    for y in range(south, north + 1):
+        diffAB = tr[:, 1] - tr[:, 0]
+        diffAC = tr[:, 2] - tr[:, 0]
+        diffBC = tr[:, 2] - tr[:, 1]
+
+        kAB = diffAB[1] / diffAB[0]
+        kAC = diffAC[1] / diffAC[0]
+        kBC = diffBC[1] / diffBC[0]
+
+        dxab = (y - tr[1, 0]) / kAB
+        xab = tr[0, 0] + dxab
+        dxac = (y - tr[1, 0]) / kAC
+        xac = tr[0, 0] + dxac
+        dxbc = (y - tr[1, 1]) / kBC
+        xbc = tr[0, 1] + dxbc
+
+        sol = np.array([xab, xac, xbc])
+
+        sol = sol[west <= sol]
+        sol = sol[sol <= east]
+
+        if sol.size == 0:
+            continue
+
+        left  = np.round(np.amin(sol)).astype(int)
+        right = np.round(np.amax(sol)).astype(int)
+
+        sum += np.sum(img[left:right + 1, y], axis = 0)
+        num_of_pixels += right - left + 1
 
     num_of_pixels = 1 if num_of_pixels == 0 else num_of_pixels
     sum[0], sum[2] = sum[2], sum[0] # cv2 issues
@@ -62,7 +71,7 @@ def delaunay_color(img, dln):
     for ind in range(dln.triangles.shape[0]):
         sys.stdout.write('\r[' + '-' * (50 * ind / l) + ' ' * (50 - 50 * ind / l) + ']')
         triang = np.array([dln.x[dln.triangles[ind]], dln.y[dln.triangles[ind]]])
-        colors[ind] = color_sum(img, triang)
+        colors[ind] = triangle_sum(img, triang)
     return colors
 
 
@@ -70,7 +79,7 @@ def main():
     print("Trimath main")
     import cv2
     img = cv2.imread('images/tara.jpg')
-    img = np.flipud(img)
+    # img = np.flipud(img)
 
     print "Running Delaunay triangulation"
     dln = random_delaunay(img, 5000)

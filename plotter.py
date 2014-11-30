@@ -6,7 +6,7 @@ from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
 def plot_triangles(dln, colors, size = (10,10)):
-    fig, ax = plt.subplots( figsize = size, dpi = 100)
+    fig, ax = plt.subplots()
 
     patches = []
     x = np.array(dln.x)
@@ -20,7 +20,7 @@ def plot_triangles(dln, colors, size = (10,10)):
     pcol.set_color(colors)
     ax.add_collection(pcol)
     ax.autoscale_view()
-    # ax.axis('equal')
+    ax.axis('equal')
     plt.show()
 
 if __name__ == "__main__":
