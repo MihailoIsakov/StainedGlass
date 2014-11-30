@@ -5,7 +5,7 @@ from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
-def plot_triangles(dln, colors, xlim = 1, ylim = 1, size = (10,10)):
+def plot_triangles(dln, colors, size = (10,10)):
     fig, ax = plt.subplots( figsize = size, dpi = 100)
 
     patches = []
@@ -19,15 +19,16 @@ def plot_triangles(dln, colors, xlim = 1, ylim = 1, size = (10,10)):
     pcol.set_linewidth(0)
     pcol.set_color(colors)
     ax.add_collection(pcol)
-
+    ax.autoscale_view()
+    # ax.axis('equal')
     plt.show()
 
 if __name__ == "__main__":
     N = 1000
     from matplotlib.tri import Triangulation
 
-    points = np.random.rand(N,2) * 10
+    points = np.random.rand(N,2) * [10,20]
     dln = Triangulation(points[:, 0], points[:, 1])
     colors = tuple(np.random.rand(N,3))
 
-    plot_triangles(dln, colors, 10, 10)
+    plot_triangles(dln, colors)
