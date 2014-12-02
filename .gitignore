@@ -6,9 +6,11 @@ __pycache__/
 
 
 # Distribution / packaging
+.idea/
 .Python
 exp/
 profiles/
+images/
 env/
 build/
 develop-eggs/

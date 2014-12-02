@@ -100,14 +100,16 @@ def main():
 
     print("Trimath main")
     import cv2
-    img = cv2.imread('images/tara.jpg')
-    # img = np.flipud(img)
+    img = cv2.imread('images/lion.jpg')
+
+    img = np.flipud(img)
 
     print "Running Delaunay triangulation"
-    dln = random_delaunay(img, 500)
+    dln = random_delaunay(img, 5000)
 
     print "Caluclating triangle colors"
     colors = delaunay_color(img, dln)
+    colors[0] = (0, 0, 1)
 
     print "Plotting triangles"
     plot_triangles(dln, colors)
