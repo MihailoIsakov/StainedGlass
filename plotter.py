@@ -23,6 +23,7 @@ def plot_triangles(dln, colors, size = (10,10)):
     ax.axis('equal')
     plt.show()
 
+
 if __name__ == "__main__":
     N = 1000
     from matplotlib.tri import Triangulation
