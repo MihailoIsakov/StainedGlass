@@ -129,9 +129,9 @@ class TriangleMesh(Triangulation):
         mapping = TriangleMesh._map_triangles(oldtriangles, mutated)
         for new_i, mp in enumerate(mapping):
             if not np.isnan(mp):
-                print mp
-                ind = int(mp)
                 newcolors[new_i] = oldcolors[mp]
+            else:
+                newcolors[new_i] = (0, 1, 0)
 
         self.triangles = newtriangles
         self.colors = newcolors
@@ -156,8 +156,7 @@ class TriangleMesh(Triangulation):
         self.collection = PatchCollection(self._patches)
         return self.collection
 
-
-    def colorize(self, return_error = False):
+    def colorize(self, return_error=False):
         self.colors = np.zeros([self.triangles.shape[0], 3])
         self.errors = np.zeros([self.triangles.shape[0]])
         l = self.triangles.shape[0]
@@ -177,7 +176,7 @@ def main():
 
     print("Trimath main")
     import cv2
-    img = cv2.imread('images/tara.jpg')
+    img = cv2.imread('images/lion.jpg')
 
     img = np.flipud(img)
 
@@ -188,17 +187,20 @@ def main():
     dln.colorize(return_error = True)
 
     print "Plotting triangles"
-    plotter.plot_mesh(dln)
+    ax = plotter.start()
+    ax = plotter.draw_mesh(dln, ax)
 
-    count = 0
-    for i in range (200):
+    for i in range (50):
+        print i
         dln.kill_point(np.round(np.random.rand() * 200).astype(int))
+        ax = plotter.draw_mesh(dln, ax)
 
     dln.colorize()
 
-    plotter.plot_mesh(dln)
+    plotter.draw_mesh(dln, ax)
     print("Finished")
 
+    # plotter.keep_plot_open()
 
 if __name__ == "__main__":
     main()
