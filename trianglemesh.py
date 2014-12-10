@@ -3,7 +3,7 @@ __author__ = 'zieghailo'
 import sys
 import numpy as np
 import plotter
-from trimath import triangle_sum
+from trimath import triangle_sum, rand_point_in_triangle
 from matplotlib.tri import Triangulation
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
@@ -46,6 +46,15 @@ class TriangleMesh(Triangulation):
         self.y = np.delete(self.y, kill)
         Triangulation.__init__(self, self.x, self.y)
 
+    def _add_point(self, x, y):
+        """
+        Adds a point and reruns the triangulation
+        :param x: the x value of the point
+        :param y: the y value of the point
+        """
+        self.x = np.append(self.x, x)
+        self.y = np.append(self.y, y)
+        Triangulation.__init__(self, self.x, self.y)
 
     @staticmethod
     def _sort_ascending(triangles, colors = None):
@@ -90,8 +99,8 @@ class TriangleMesh(Triangulation):
         :param newtr: New triangulation.
         :return: Numpy array mapping the index of each old triangle to a new one.
         """
-        o = 0 # old index
-        n = 0 # new index
+        o = 0  # old index
+        n = 0  # new index
         mapping = np.zeros(newtr.shape[0])
         while n < newtr.shape[0] and o < oldtr.shape[0]:
             if (oldtr[o] == newtr[n]).all():
@@ -124,24 +133,26 @@ class TriangleMesh(Triangulation):
         mutated = np.copy(newtriangles)
         mutated[mutated >= kill] += 1
         # set the colors for it to zeros
-        newcolors = np.zeros([newtriangles.shape[0], 3])
+        self.colors = np.zeros([newtriangles.shape[0], 3])
 
         mapping = TriangleMesh._map_triangles(oldtriangles, mutated)
         for new_i, mp in enumerate(mapping):
             if not np.isnan(mp):
-                newcolors[new_i] = oldcolors[mp]
+                self.colors[new_i] = oldcolors[mp]
             else:
-                newcolors[new_i] = (0, 1, 0)
+                vertices = newtriangles[new_i]
+                input_triangle = np.array([self.x[vertices], self.y[vertices]])
+                self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
+                self.colors[new_i] = (0, 1, 0)
 
         self.triangles = newtriangles
-        self.colors = newcolors
 
-
-    def add_point(self, x, y):
-        self.x = np.append(self.x, x)
-        self.y = np.append(self.y, y)
-        Triangulation.__init__(self, self.x, self.y)
-
+    def get_point_errors(self):
+        self._point_errors = np.zeros(self.x.shape[0])
+        for tr_index, tr_vert in enumerate(self.triangles):
+            tr_err = self._triangle_errors[tr_index]
+            for vertex in tr_vert:
+                self._point_errors[vertex] += tr_err
 
     def build_collection(self):
         """
@@ -158,16 +169,13 @@ class TriangleMesh(Triangulation):
 
     def colorize(self, return_error=False):
         self.colors = np.zeros([self.triangles.shape[0], 3])
-        self.errors = np.zeros([self.triangles.shape[0]])
+        self._triangle_errors = np.zeros([self.triangles.shape[0]])
         l = self.triangles.shape[0]
 
         for ind in range(l):
             sys.stdout.write('\r[' + '-' * (50 * ind / l) + ' ' * (50 - 50 * ind / l) + ']')
             triang = np.array([self.x[self.triangles[ind]], self.y[self.triangles[ind]]])
-            c, e  = triangle_sum(self.img, triang, return_error)
-            self.colors[ind] = c
-            self.errors[ind] = e
-
+            self.colors[ind], self._triangle_errors[ind] = triangle_sum(self.img, triang, return_error)
         print ' '
 
 
@@ -181,7 +189,7 @@ def main():
     img = np.flipud(img)
 
     print "Running Delaunay triangulation"
-    dln = TriangleMesh(img, 500)
+    dln = TriangleMesh(img, 5000)
 
     print "Caluclating triangle colors"
     dln.colorize(return_error = True)
@@ -190,17 +198,20 @@ def main():
     ax = plotter.start()
     ax = plotter.draw_mesh(dln, ax)
 
-    for i in range (50):
+    for i in range (4000):
         print i
-        dln.kill_point(np.round(np.random.rand() * 200).astype(int))
-        ax = plotter.draw_mesh(dln, ax)
+        dln.get_point_errors()
+        minind = np.argmax(dln._point_errors)
+        dln.kill_point(minind)
+        if i % 10 == 0:
+            ax = plotter.draw_mesh(dln, ax)
 
     dln.colorize()
 
     plotter.draw_mesh(dln, ax)
     print("Finished")
 
-    # plotter.keep_plot_open()
+    plotter.keep_plot_open()
 
 if __name__ == "__main__":
     main()

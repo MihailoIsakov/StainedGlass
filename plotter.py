@@ -15,8 +15,6 @@ def start(size = (20,10)):
 def draw_mesh(mesh, ax):
     import numpy
     x = numpy.random.rand()
-    if x > 0.9:
-        mesh.colors[int(numpy.random.rand() * 100)] = (0, 1, 0)
     mesh.build_collection()
     pcol = mesh.collection
     pcol.set_linewidth(0)
