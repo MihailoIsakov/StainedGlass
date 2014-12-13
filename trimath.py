@@ -3,6 +3,21 @@ __author__ = 'zieghailo'
 import numpy as np
 
 
+def in_triangle(point, triangle):
+    """
+    Check if point is inside the triangle
+    :param point: two element numpy.array, p = [x,y]
+    :param triangle: 2x3 numpy.array of the triangle vertices
+    :return: True if the point is in the triangle
+    """
+    mat = np.copy(triangle[:, 1:])
+    mat[:,0] -= triangle[:,0]
+    mat[:,1] -= triangle[:,0]
+    p = point - triangle[:,0]
+    x = np.linalg.solve(mat, p)
+    return 0 <= x[0] <= 1 and 0 <= x[1] <= 1 and x[0] + x[1] <= 1
+
+
 def _y_intersects(y, tr):
     """
     Returns the points where the triangle lines intersect the horizontal y line
@@ -61,8 +76,11 @@ def triangle_sum(img, tr, get_error=False):
         bounds[y - south] = [left, right]
 
         # TODO figure out why we access by (y,x) instead of (x,y)
-        sum += np.sum(img[y, left:right + 1], axis = 0)
-        num_of_pixels += right - left + 1
+        try:
+            sum += np.sum(img[y, left:right + 1], axis = 0)
+            num_of_pixels += right - left + 1
+        except Exception:
+            pass
 
     num_of_pixels = 1 if num_of_pixels == 0 else num_of_pixels
     sum[0], sum[2] = sum[2], sum[0] # cv2 issues
@@ -77,7 +95,7 @@ def triangle_sum(img, tr, get_error=False):
     return (tuple(color / 255.0), error)
 
 def rand_point_in_triangle(tr):
-    # TODO make a uniformly distributed random point-in-triangle generator
+    # TODO make a uniformly distributraed random point-in-triangle generator
     A = tr[:, 0]
     B = tr[:, 1]
     C = tr[:, 2]
@@ -85,10 +103,9 @@ def rand_point_in_triangle(tr):
     AC = C - A
 
     k = 1; s = 1
-    while k + s <= 1:
+    while k + s >= 1:
         k = np.random.rand()
         s = np.random.rand()
 
-    point =  A + AB * k + AC
-
+    point = A + AB * k + AC * s
     return point
