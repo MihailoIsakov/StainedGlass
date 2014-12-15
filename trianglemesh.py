@@ -183,7 +183,9 @@ class TriangleMesh(Triangulation):
             newx = np.copy(oldx)
             newy = np.copy(oldy)
             newx[point] += vector[0] * delta
+            newx[point] = max(0, min(newx[point], self.img.shape[0]))
             newy[point] += vector[1] * delta
+            newy[point] = max(0, min(newy[point], self.img.shape[1]))
 
             self.x = newx
             self.y = newy
@@ -270,16 +272,18 @@ def main():
     ax = plotter.start()
     ax = plotter.draw_mesh(dln, ax)
 
-    for i in range(1000):
-        p = (np.round(np.random.rand() * dln.x.shape[0])).astype(int)
-        dln.slide_point(p, 2)
+    for i in range(100000):
+        # p = (np.floor(np.random.rand() * dln.x.shape[0])).astype(int)
+        ind = np.argmax(dln._triangle_errors)
+        ind = dln.triangles[ind][int(np.random.rand() * 3)]
+        dln.slide_point(ind, 3)
         dln.get_point_errors()
         ind = np.argmax(dln._triangle_errors)
         dln.generate_point(ind)
         dln.get_point_errors()
         ind = np.argmin(dln._point_errors)
         dln.kill_point(ind)
-        if i % 10 == 0:
+        if i % 50 == 0:
             ax = plotter.draw_mesh(dln, ax)
 
 
