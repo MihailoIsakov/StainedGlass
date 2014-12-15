@@ -1,6 +1,7 @@
 __author__ = 'zieghailo'
 
 import unittest
+import numpy.testing as nptest
 from trimath import *
 
 class MyTestCase(unittest.TestCase):
@@ -28,6 +29,18 @@ class MyTestCase(unittest.TestCase):
 
         p5 = np.array([2.5, 1.4])
         self.assertFalse(in_triangle(p5, triang))
+
+    def test_sum_row(self):
+        from trimath import _sum_row
+
+        img = np.array([range(100), range(100), range(100)])
+        bounds = [0, 39]
+        y = 0
+
+        s, n = _sum_row(img, y, bounds)
+        x = 39 * 20
+        nptest.assert_array_equal(s, [x, x, x])
+
 
 
 if __name__ == '__main__':

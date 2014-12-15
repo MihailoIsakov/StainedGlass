@@ -253,14 +253,14 @@ def main():
 
     print "Plotting triangles"
     ax = plotter.start()
-    # ax = plotter.draw_mesh(dln, ax)
+    ax = plotter.draw_mesh(dln, ax)
 
     for i in range(1000):
         # dln.get_point_errors()
         ind = np.argmax(dln._triangle_errors)
         dln.generate_point(ind)
-        # if i % 100 == 0:
-            # ax = plotter.draw_mesh(dln, ax)
+        if i % 100 == 0:
+            ax = plotter.draw_mesh(dln, ax)
 
 
     plotter.draw_mesh(dln, ax)
