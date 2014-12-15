@@ -134,9 +134,7 @@ class TriangleMesh(Triangulation):
         return res
 
     def _recycle(self, old_triangles, old_colors, old_errors):
-        old_triangles, old_colors, old_errors = TriangleMesh._sort_and_copy(old_triangles, old_colors, old_errors)
-
-        self.triangles = TriangleMesh._sort_and_copy(self.triangles)
+        self.triangles = TriangleMesh._sort_and_copy(self.triangles)[0]
         N = self.triangles.shape[0]
         self.colors = np.zeros([N, 3])
         self._triangle_errors = np.zeros(N)
@@ -146,11 +144,10 @@ class TriangleMesh(Triangulation):
         for new_i, mp in enumerate(mapping):
             if not np.isnan(mp):
                 self.colors[new_i] = old_colors[mp]
-                self._triangle_errors = old_errors[mp]
+                self._triangle_errors[new_i] = old_errors[mp]
             else:
                 input_triangle = self.get_triangle(new_i)
                 self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
-
 
     def generate_point(self, tri_ind):
         # sort the old points
@@ -160,51 +157,51 @@ class TriangleMesh(Triangulation):
         gen = rand_point_in_triangle(triangle)
         self._add_point(gen[0], gen[1])
 
-        # get a new triangulation without the killed point
-        # sort that too
-        newtriangles = self._sort_and_copy(self.triangles)[0]
-        self.triangles = newtriangles
-        # a copy thats pointing to old points
-        # set the colors for it to zeros
-        self.colors = np.zeros([newtriangles.shape[0], 3])
-        self._triangle_errors = np.zeros([newtriangles.shape[0]])
-
-        mapping = TriangleMesh._map_triangles(oldtriangles, newtriangles)
-        for new_i, mp in enumerate(mapping):
-            if not np.isnan(mp):
-                self.colors[new_i] = oldcolors[mp]
-                self._triangle_errors[new_i] = olderrors[mp]
-            else:
-                input_triangle = self.get_triangle(new_i)
-                self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
-
-
+        self._recycle(oldtriangles, oldcolors, olderrors)
 
     def kill_point(self, kill):
         # sort the old points
         oldtriangles, oldcolors, olderrors = TriangleMesh._sort_and_copy(self.triangles, self.colors, self._triangle_errors)
+        oldtriangles[oldtriangles >= kill] -= 1
         # kill the point
         self._remove_point(kill)
 
         # get a new triangulation without the killed point
-        # sort that too
         newtriangles = TriangleMesh._sort_and_copy(self.triangles)[0]
-        # a copy thats pointing to old points
-        mutated = np.copy(newtriangles)
-        mutated[mutated >= kill] += 1
-        # set the colors for it to zeros
-        self.colors = np.zeros([newtriangles.shape[0], 3])
 
-        mapping = TriangleMesh._map_triangles(oldtriangles, mutated)
-        for new_i, mp in enumerate(mapping):
-            if not np.isnan(mp):
-                self.colors[new_i] = oldcolors[mp]
-            else:
-                vertices = newtriangles[new_i]
-                input_triangle = np.array([self.x[vertices], self.y[vertices]])
-                self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
+        self._recycle(oldtriangles, oldcolors, olderrors)
 
-        self.triangles = newtriangles
+    def slide_point(self, point, delta):
+        oldtriangles, oldcolors, olderrors = TriangleMesh._sort_and_copy(self.triangles, self.colors, self._triangle_errors)
+        oldx = np.copy(self.x)
+        oldy = np.copy(self.y)
+        max_ind = 0
+        max_error = 0
+
+        directions = [[-1, 0], [1, 0], [0, 1], [0, -1]]
+        for ind, vector in enumerate([[-1, 0], [1, 0], [0, 1], [0, -1]]):
+            newx = np.copy(oldx)
+            newy = np.copy(oldy)
+            newx[point] += vector[0] * delta
+            newy[point] += vector[1] * delta
+
+            self.x = newx
+            self.y = newy
+            Triangulation.__init__(self, self.x, self.y)
+
+            self._recycle(oldtriangles, oldcolors, olderrors)
+            error_sum = np.sum(self._triangle_errors)
+
+            if error_sum > max_error:
+                max_ind = ind
+                max_error = error_sum
+
+        self.x = oldx
+        self.y = oldy
+        self.x[point] += directions[max_ind][0] * delta
+        self.y[point] += directions[max_ind][1] * delta
+        Triangulation.__init__(self, self.x, self.y)
+        self._recycle(oldtriangles, oldcolors, olderrors)
 
     def get_point_errors(self):
         self._point_errors = np.zeros(self.x.shape[0])
@@ -274,7 +271,9 @@ def main():
     ax = plotter.draw_mesh(dln, ax)
 
     for i in range(1000):
-        # dln.get_point_errors()
+        p = (np.round(np.random.rand() * dln.x.shape[0])).astype(int)
+        dln.slide_point(p, 2)
+        dln.get_point_errors()
         ind = np.argmax(dln._triangle_errors)
         dln.generate_point(ind)
         dln.get_point_errors()
