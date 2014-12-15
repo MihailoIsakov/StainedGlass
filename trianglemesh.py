@@ -221,7 +221,6 @@ class TriangleMesh(Triangulation):
         print ' '
 
     def parallel_colorize(self, return_error=False):
-        print "Starting parallel colorization"
 
         N = self.triangles.shape[0]
         self.colors = np.zeros([N, 3])
@@ -231,15 +230,20 @@ class TriangleMesh(Triangulation):
 
         pool = multiprocessing.Pool(processes=8)
         import functools
-        f = functools.partial(triangle_sum, self.img, get_error=True)
+        f = functools.partial(triangle_sum, self.img, get_error=return_error)
 
-        colors = pool.map(f, triangles)
+        res = pool.map(f, triangles)
         pool.close()
         pool.join()
 
-        self.colors = [c[0] for c in colors]
+        if not return_error:
+            self.colors = np.array(res)
+        else:
+            # FIXME: too much array manipulation to get multiple params from sum_triangles
+            res = np.array(res)
+            self.colors = np.array([np.array(c[0]) for c in res])
+            self._triangle_errors = np.array([np.array(c[1]) for c in res])
 
-        print "Parallel colorization finished"
 
 def main():
     np.seterr(all = 'ignore')
@@ -268,7 +272,6 @@ def main():
         if i % 10 == 0:
             ax = plotter.draw_mesh(dln, ax)
 
-    dln.colorize()
 
     plotter.draw_mesh(dln, ax)
     print("Finished")

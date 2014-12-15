@@ -13,8 +13,6 @@ def start(size = (20,10)):
 
 
 def draw_mesh(mesh, ax):
-    import numpy
-    x = numpy.random.rand()
     mesh.build_collection()
     pcol = mesh.collection
     pcol.set_linewidth(0)

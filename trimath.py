@@ -91,8 +91,9 @@ def triangle_sum(img, tr, get_error=False):
         for y in range(south, north + 1): # get the error of the triangle
             # error += np.sum(np.linalg.norm())
             error += np.sum(np.linalg.norm(np.linalg.norm(img[y, bounds[y - south, 0] : bounds[y - south, 1] + 1] - color)))
+        return tuple(color / 255.0), error
 
-    return tuple(color / 255.0), error
+    return tuple(color / 255.0)
 
 def triangle_sum_wrapper(img, tr, get_error, result):
     result = triangle_sum(img, tr, get_error)
