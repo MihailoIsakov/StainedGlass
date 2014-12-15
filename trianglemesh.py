@@ -3,7 +3,7 @@ __author__ = 'zieghailo'
 import sys
 import numpy as np
 import plotter
-from trimath import triangle_sum, rand_point_in_triangle
+from trimath import triangle_sum, rand_point_in_triangle, parallel_sum
 from matplotlib.tri import Triangulation
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
@@ -157,7 +157,7 @@ class TriangleMesh(Triangulation):
                 self._triangle_errors[new_i] = olderrors[mp]
             else:
                 input_triangle = self.get_triangle(new_i)
-                self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
+                self.colors[new_i], self._triangle_errors[new_i] = parallel_sum(self.img, input_triangle, True)
 
 
 

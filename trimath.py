@@ -1,6 +1,10 @@
 __author__ = 'zieghailo'
 
 import numpy as np
+from collections import namedtuple
+
+
+Rect = namedtuple('Rect', ['north', 'south', 'east', 'west'])
 
 
 def in_triangle(point, triangle):
@@ -55,46 +59,89 @@ def triangle_sum(img, tr, get_error=False):
     the absolute color error in the triangle
     :return: The average color and the absolute error
     """
-    north = np.ceil(np.amax(tr[1])).astype(int)
-    south = np.floor(np.amin(tr[1])).astype(int)
-    east  = np.ceil(np.amax(tr[0])).astype(int)
-    west  = np.floor(np.amin(tr[0])).astype(int)
-
+    rect = _get_rect(tr)
     num_of_pixels = 0
-    sum = np.array([0, 0, 0])
-    bounds = np.zeros([north - south + 1, 2])
+    color = np.array([0, 0, 0])
+    borders = _get_borders(tr)
 
-    for y in range(south, north + 1):
+    for y in range(rect.south, rect.north + 1):
+        dy = y - rect.south
+        s, n = _sum_row(img, y, borders[dy])
+        color += s
+        num_of_pixels += n
+
+    num_of_pixels = max(num_of_pixels, 1)
+    color[0], color[2] = color[2], color[0] # cv2 issues
+    color = color / num_of_pixels
+
+    error = np.array(0)
+    if get_error:
+        for y in range(rect.south, rect.north + 1): # get the error of the triangle
+            dy = y - rect.south
+            error += _sum_row_error(img, color, y, borders[dy])
+        return tuple(color / 255.0), error
+
+    return tuple(color / 255.0)
+
+
+def _get_rect(tr):
+    _north = np.ceil(np.amax(tr[1])).astype(int)
+    _south = np.floor(np.amin(tr[1])).astype(int)
+    _east  = np.ceil(np.amax(tr[0])).astype(int)
+    _west  = np.floor(np.amin(tr[0])).astype(int)
+    return Rect(_north, _south, _east, _west)
+
+
+def _get_borders(tr):
+    rect = _get_rect(tr)
+
+    borders = np.zeros([rect.north - rect.south + 1, 2])
+    for y in range(rect.south, rect.north + 1):
         sol = _y_intersects(y, tr)
-        sol = sol[west <= sol]
-        sol = sol[sol <= east]
+        sol = sol[rect.west <= sol]
+        sol = sol[sol <= rect.east]
 
         if sol.size == 0:
             continue
 
         left  = np.round(np.amin(sol)).astype(int)
         right = np.round(np.amax(sol)).astype(int)
-        bounds[y - south] = [left, right]
+        borders[y - rect.south] = [left, right]
 
-        # TODO figure out why we access by (y,x) instead of (x,y)
-        try:
-            sum += np.sum(img[y, left:right + 1], axis = 0)
-            num_of_pixels += right - left + 1
-        except Exception:
-            pass
+    return borders
 
-    num_of_pixels = 1 if num_of_pixels == 0 else num_of_pixels
-    sum[0], sum[2] = sum[2], sum[0] # cv2 issues
-    color = sum / num_of_pixels
 
-    error = np.array(0)
-    if get_error:
-        for y in range(south, north + 1): # get the error of the triangle
-            # error += np.sum(np.linalg.norm())
-            error += np.sum(np.linalg.norm(np.linalg.norm(img[y, bounds[y - south, 0] : bounds[y - south, 1] + 1] - color)))
-        return tuple(color / 255.0), error
+def _sum_row_error(img, color, y, bounds):
+    left = bounds[0]
+    right = bounds[1]
+    try:
+        error = np.sum(np.linalg.norm(np.linalg.norm(img[y, left:right + 1] - color)))
+    except Exception:
+        error = 0
 
-    return tuple(color / 255.0)
+    return error
+
+
+def _sum_row(img, y, bounds):
+    """
+    Sums the pixels at y height betwwen the borders
+    :param img: pixel matrix
+    :param y: row height
+    :param bounds: 2x1 array of borders
+    :return: sum of pixels
+    """
+    sum = [0, 0, 0]
+    num_of_pixels = 0
+    left = bounds[0]
+    right = bounds[1]
+    # TODO figure out why we access by (y,x) instead of (x,y)
+    try:
+        sum = np.sum(img[y, left:right + 1], axis=0)
+        num_of_pixels = right - left + 1
+    except Exception:
+        pass
+
+    return sum, num_of_pixels
 
 
 def rand_point_in_triangle(tr):
