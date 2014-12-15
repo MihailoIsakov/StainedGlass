@@ -55,6 +55,12 @@ class MeshTestCase(unittest.TestCase):
                 print i, m
                 nptest.assert_array_equal(tr1[m], tr2[i])
 
+    def test_map_generate(self):
+        mesh = TriangleMesh(self.img, 100)
+        tr = TriangleMesh._get_ascending_order(mesh.triangles)
+        mesh._add_point(np.random.rand() * 100, np.random.rand() * 100)
+
+
     def test_kill_point(self):
         # FIXME: mapping returns all NaNs
         mesh = TriangleMesh(self.img, 100)

@@ -3,7 +3,7 @@ __author__ = 'zieghailo'
 import sys
 import numpy as np
 import plotter
-from trimath import triangle_sum, triangle_sum_wrapper, rand_point_in_triangle
+from trimath import triangle_sum, rand_point_in_triangle
 from matplotlib.tri import Triangulation
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
@@ -94,7 +94,8 @@ class TriangleMesh(Triangulation):
         """
         o = 0  # old index
         n = 0  # new index
-        mapping = np.zeros(newtr.shape[0])
+        mapping = np.empty(newtr.shape[0])
+        mapping[:] = np.nan
         while n < newtr.shape[0] and o < oldtr.shape[0]:
             if (oldtr[o] == newtr[n]).all():
                 # reuse the old color
@@ -143,10 +144,11 @@ class TriangleMesh(Triangulation):
         # get a new triangulation without the killed point
         # sort that too
         newtriangles = self._sort_and_copy(self.triangles)[0]
+        self.triangles = newtriangles
         # a copy thats pointing to old points
         # set the colors for it to zeros
         self.colors = np.zeros([newtriangles.shape[0], 3])
-        self._triangle_errors = np.zeros([newtriangles.shape[0], 3])
+        self._triangle_errors = np.zeros([newtriangles.shape[0]])
 
         mapping = TriangleMesh._map_triangles(oldtriangles, newtriangles)
         for new_i, mp in enumerate(mapping):
@@ -157,7 +159,7 @@ class TriangleMesh(Triangulation):
                 input_triangle = self.get_triangle(new_i)
                 self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
 
-        self.triangles = newtriangles
+
 
     def kill_point(self, kill):
         # sort the old points
@@ -209,17 +211,6 @@ class TriangleMesh(Triangulation):
         self.collection = PatchCollection(self._patches)
         return self.collection
 
-    def colorize(self, return_error=False):
-        self.colors = np.zeros([self.triangles.shape[0], 3])
-        self._triangle_errors = np.zeros([self.triangles.shape[0]])
-        l = self.triangles.shape[0]
-
-        for ind in range(l):
-            sys.stdout.write('\r[' + '-' * (50 * ind / l) + ' ' * (50 - 50 * ind / l) + ']')
-            triang = np.array([self.x[self.triangles[ind]], self.y[self.triangles[ind]]])
-            self.colors[ind], self._triangle_errors[ind] = triangle_sum(self.img, triang, return_error)
-        print ' '
-
     def parallel_colorize(self, return_error=False):
 
         N = self.triangles.shape[0]
@@ -265,11 +256,10 @@ def main():
     ax = plotter.draw_mesh(dln, ax)
 
     for i in range(1000):
-        print i
         # dln.get_point_errors()
-        minind = np.argmax(dln._triangle_errors)
-        dln.generate_point(minind)
-        if i % 10 == 0:
+        ind = np.argmax(dln._triangle_errors)
+        dln.generate_point(ind)
+        if i % 100 == 0:
             ax = plotter.draw_mesh(dln, ax)
 
 

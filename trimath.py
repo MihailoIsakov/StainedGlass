@@ -44,6 +44,7 @@ def _y_intersects(y, tr):
 
         return np.array([xab, xac, xbc])
 
+
 def triangle_sum(img, tr, get_error=False):
     """
     Returns the average RGB value for the pixels in the triangle tr,
@@ -95,9 +96,6 @@ def triangle_sum(img, tr, get_error=False):
 
     return tuple(color / 255.0)
 
-def triangle_sum_wrapper(img, tr, get_error, result):
-    result = triangle_sum(img, tr, get_error)
-    return
 
 def rand_point_in_triangle(tr):
     A = tr[:, 0]
