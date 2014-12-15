@@ -15,7 +15,7 @@ class MeshTestCase(unittest.TestCase):
         self.mesh = TriangleMesh(self.img, self.N)
 
     def test_sort_ascending(self):
-        srtd = TriangleMesh._sort_ascending(self.mesh.triangles)
+        srtd = TriangleMesh._get_ascending_order(self.mesh.triangles)
 
         for row in srtd:
             self.assertLessEqual(row[0], row[1])
@@ -40,33 +40,39 @@ class MeshTestCase(unittest.TestCase):
 
     def test_map_triangles(self):
         mesh1 = TriangleMesh(self.img, 100)
-        tr1 = np.copy(mesh1.triangles)
-        mesh1._remove_point(10)
+        tr1 = TriangleMesh._get_ascending_order(mesh1.triangles)
+
+        kill = 40
+        mesh1._remove_point(kill)
         tr2 = np.copy(mesh1.triangles)
+        tr2 = TriangleMesh._get_ascending_order(tr2)
+        tr2[tr2 >= kill] += 1
+        tr2 = TriangleMesh._get_ascending_order(tr2)
         mapping = TriangleMesh._map_triangles(tr1, tr2)
 
         for i, m in enumerate(mapping):
             if not np.isnan(m):
-                print i,m
-                self.assertEquals(tr1[i], tr2[m])
+                print i, m
+                nptest.assert_array_equal(tr1[m], tr2[i])
 
-    @p
     def test_kill_point(self):
         # FIXME: mapping returns all NaNs
         mesh = TriangleMesh(self.img, 100)
         mesh.colorize(False)
-        old_tr = np.copy(mesh.triangles)
-        old_clr = np.copy(mesh.colors)
+        old_tr, old_clr = TriangleMesh._get_ascending_order(mesh.triangles, mesh.colors)
 
         kill = 50
         mesh.kill_point(kill)
-        mapping = TriangleMesh._map_triangles(old_tr, mesh.triangles)
+        new_tr = TriangleMesh._get_ascending_order(mesh.triangles)
+        new_tr[new_tr >= kill] == 1
+
+        mapping = TriangleMesh._map_triangles(old_tr, new_tr)
 
         for i, m in enumerate(mapping):
             if not np.isnan(m):
                 oclr = old_clr[m]
                 nclr = mesh.colors[i]
-                self.assertEquals(oclr, nclr)
+                nptest.assert_array_equal(oclr, nclr)
 
 if __name__ == '__main__':
     unittest.main()

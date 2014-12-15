@@ -26,23 +26,23 @@ def _y_intersects(y, tr):
     :return: the three points where the line intersects the lines. Some may be NaN in case of a horizontal line.
     """
     # TODO: probably can be replaced by a faster numpy routine
-    diffAB = tr[:, 1] - tr[:, 0]
-    diffAC = tr[:, 2] - tr[:, 0]
-    diffBC = tr[:, 2] - tr[:, 1]
+    with np.errstate(invalid='ignore', divide='ignore'):
+        diffAB = tr[:, 1] - tr[:, 0]
+        diffAC = tr[:, 2] - tr[:, 0]
+        diffBC = tr[:, 2] - tr[:, 1]
 
-    kAB = diffAB[1] / diffAB[0]
-    kAC = diffAC[1] / diffAC[0]
-    kBC = diffBC[1] / diffBC[0]
+        kAB = diffAB[1] / diffAB[0]
+        kAC = diffAC[1] / diffAC[0]
+        kBC = diffBC[1] / diffBC[0]
 
-    dxab = (y - tr[1, 0]) / kAB
-    xab = tr[0, 0] + dxab
-    dxac = (y - tr[1, 0]) / kAC
-    xac = tr[0, 0] + dxac
-    dxbc = (y - tr[1, 1]) / kBC
-    xbc = tr[0, 1] + dxbc
+        dxab = (y - tr[1, 0]) / kAB
+        xab = tr[0, 0] + dxab
+        dxac = (y - tr[1, 0]) / kAC
+        xac = tr[0, 0] + dxac
+        dxbc = (y - tr[1, 1]) / kBC
+        xbc = tr[0, 1] + dxbc
 
-    return np.array([xab, xac, xbc])
-
+        return np.array([xab, xac, xbc])
 
 def triangle_sum(img, tr, get_error=False):
     """
@@ -92,10 +92,13 @@ def triangle_sum(img, tr, get_error=False):
             # error += np.sum(np.linalg.norm())
             error += np.sum(np.linalg.norm(np.linalg.norm(img[y, bounds[y - south, 0] : bounds[y - south, 1] + 1] - color)))
 
-    return (tuple(color / 255.0), error)
+    return tuple(color / 255.0), error
+
+def triangle_sum_wrapper(img, tr, get_error, result):
+    result = triangle_sum(img, tr, get_error)
+    return
 
 def rand_point_in_triangle(tr):
-    # TODO make a uniformly distributraed random point-in-triangle generator
     A = tr[:, 0]
     B = tr[:, 1]
     C = tr[:, 2]
@@ -103,7 +106,7 @@ def rand_point_in_triangle(tr):
     AC = C - A
 
     k = 1; s = 1
-    while k + s >= 1:
+    while k + s > 1:
         k = np.random.rand()
         s = np.random.rand()
 

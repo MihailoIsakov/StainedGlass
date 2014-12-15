@@ -3,10 +3,11 @@ __author__ = 'zieghailo'
 import sys
 import numpy as np
 import plotter
-from trimath import triangle_sum, rand_point_in_triangle
+from trimath import triangle_sum, triangle_sum_wrapper, rand_point_in_triangle
 from matplotlib.tri import Triangulation
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
+import multiprocessing
 
 
 class TriangleMesh(Triangulation):
@@ -54,20 +55,17 @@ class TriangleMesh(Triangulation):
         Triangulation.__init__(self, self.x, self.y)
 
     @staticmethod
-    def _sort_ascending(triangles, colors = None):
+    def _get_ascending_order(triangles):
         """
-        Copy and sort the array both horizontally and vertically
-        Horizontally by arranging the vertices in ascending order,
-        and vertically by sorting the triangles by the _bigger comparison
+        Create the order in which to sort the triangles,
+        so that their values are ascending both horizontaly
+        and vertically (but for not to disturb horizontaly)
         :param triangles: Nx3 numpy array
-        :param colors: colors assigned to the triangles
-        :return: copied sorted triangles
+        :return: order in which to sort the triangles
         """
-        triangles = np.sort(triangles)
+        # triangles = np.sort(triangles)
         order = np.lexsort((triangles[:, 2], triangles[:, 1], triangles[:, 0]))
-        if colors is None:
-            return triangles[order]
-        return triangles[order], colors[order]
+        return order
 
     @staticmethod
     def _bigger(t1, t2):
@@ -111,44 +109,65 @@ class TriangleMesh(Triangulation):
         return mapping
 
     def _sort_triangles(self):
-        self.triangles, self.colors = self._sort_ascending(self.triangles, self.colors)
+        order = self._get_ascending_order(self.triangles)
+        self.triangles = self.triangles[order]
+        self.colors = self.colors[order]
+        self._triangle_errors = self._triangle_errors[order]
+
+    @staticmethod
+    def _sort_and_copy(triangles, *args):
+        """
+        For a triangles, a numpy array of Nx3, finds the order according to _sort_ascending,
+        and returns sorted copies of triangles and any other arrays passed after it.
+        :param triangles: numpy array of Nx3, defining triangle vertices
+        :param args: any number of Nx3 numpy arrays
+        :return: sorted arrays according to _sort_ascending
+        """
+        order = TriangleMesh._get_ascending_order(triangles)
+
+        res_tr = np.copy(triangles)[order]
+        res = [res_tr,]
+        for a in args:
+            res.append(np.copy(a)[order])
+
+        return tuple(res)
 
     def generate_point(self, tri_ind):
         # sort the old points
-        oldtriangles, oldcolors = self._sort_ascending(self.triangles, self.colors)
+        oldtriangles, oldcolors, olderrors = TriangleMesh._sort_and_copy(self.triangles, self.colors, self._triangle_errors)
         # add the point
-        tri_vert = self.triangles[tri_ind]
-        triangle = np.array([self.x[tri_vert], self.y[tri_vert]])
+        triangle = self.get_triangle(tri_ind)
         gen = rand_point_in_triangle(triangle)
         self._add_point(gen[0], gen[1])
 
         # get a new triangulation without the killed point
         # sort that too
-        newtriangles = self._sort_ascending(self.triangles)
+        newtriangles = self._sort_and_copy(self.triangles)[0]
         # a copy thats pointing to old points
         # set the colors for it to zeros
         self.colors = np.zeros([newtriangles.shape[0], 3])
+        self._triangle_errors = np.zeros([newtriangles.shape[0], 3])
 
         mapping = TriangleMesh._map_triangles(oldtriangles, newtriangles)
         for new_i, mp in enumerate(mapping):
             if not np.isnan(mp):
                 self.colors[new_i] = oldcolors[mp]
+                self._triangle_errors[new_i] = olderrors[mp]
             else:
-                vertices = newtriangles[new_i]
-                input_triangle = np.array([self.x[vertices], self.y[vertices]])
+                input_triangle = self.get_triangle(new_i)
                 self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
 
         self.triangles = newtriangles
 
     def kill_point(self, kill):
         # sort the old points
-        oldtriangles, oldcolors = self._sort_ascending(self.triangles, self.colors)
+        oldtriangles, oldcolors = self._get_ascending_order(self.triangles, self.colors)
         # kill the point
         self._remove_point(kill)
 
         # get a new triangulation without the killed point
         # sort that too
-        newtriangles = self._sort_ascending(self.triangles)
+        newtriangles = self._get_ascending_order(self.triangles)
         # a copy thats pointing to old points
         mutated = np.copy(newtriangles)
         mutated[mutated >= kill] += 1
@@ -174,6 +193,9 @@ class TriangleMesh(Triangulation):
             for vertex in tr_vert:
                 self._point_errors[vertex] += tr_err
 
+    def get_triangle(self, tri_index):
+        return np.array([self.x[self.triangles[tri_index]], self.y[self.triangles[tri_index]]])
+
     def build_collection(self):
         """
         Builds a collection of patches from the triangles and the points stored in the object.
@@ -198,6 +220,26 @@ class TriangleMesh(Triangulation):
             self.colors[ind], self._triangle_errors[ind] = triangle_sum(self.img, triang, return_error)
         print ' '
 
+    def parallel_colorize(self, return_error=False):
+        print "Starting parallel colorization"
+
+        N = self.triangles.shape[0]
+        self.colors = np.zeros([N, 3])
+        self._triangle_errors = np.zeros([N])
+
+        triangles = map(self.get_triangle, range(N))
+
+        pool = multiprocessing.Pool(processes=8)
+        import functools
+        f = functools.partial(triangle_sum, self.img, get_error=True)
+
+        colors = pool.map(f, triangles)
+        pool.close()
+        pool.join()
+
+        self.colors = [c[0] for c in colors]
+
+        print "Parallel colorization finished"
 
 def main():
     np.seterr(all = 'ignore')
@@ -212,7 +254,7 @@ def main():
     dln = TriangleMesh(img, 5000)
 
     print "Caluclating triangle colors"
-    dln.colorize(return_error=True)
+    dln.parallel_colorize(return_error=True)
 
     print "Plotting triangles"
     ax = plotter.start()
@@ -222,7 +264,7 @@ def main():
         print i
         # dln.get_point_errors()
         minind = np.argmax(dln._triangle_errors)
-        dln.generate_point(dln.triangles[minind])
+        dln.generate_point(minind)
         if i % 10 == 0:
             ax = plotter.draw_mesh(dln, ax)
 
