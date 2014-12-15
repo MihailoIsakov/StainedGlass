@@ -3,7 +3,7 @@ __author__ = 'zieghailo'
 import sys
 import numpy as np
 import plotter
-from trimath import triangle_sum, rand_point_in_triangle, parallel_sum
+from trimath import triangle_sum, rand_point_in_triangle
 from matplotlib.tri import Triangulation
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
@@ -131,7 +131,26 @@ class TriangleMesh(Triangulation):
         for a in args:
             res.append(np.copy(a)[order])
 
-        return tuple(res)
+        return res
+
+    def _recycle(self, old_triangles, old_colors, old_errors):
+        old_triangles, old_colors, old_errors = TriangleMesh._sort_and_copy(old_triangles, old_colors, old_errors)
+
+        self.triangles = TriangleMesh._sort_and_copy(self.triangles)
+        N = self.triangles.shape[0]
+        self.colors = np.zeros([N, 3])
+        self._triangle_errors = np.zeros(N)
+
+        mapping = TriangleMesh._map_triangles(old_triangles, self.triangles)
+
+        for new_i, mp in enumerate(mapping):
+            if not np.isnan(mp):
+                self.colors[new_i] = old_colors[mp]
+                self._triangle_errors = old_errors[mp]
+            else:
+                input_triangle = self.get_triangle(new_i)
+                self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
+
 
     def generate_point(self, tri_ind):
         # sort the old points
@@ -157,7 +176,7 @@ class TriangleMesh(Triangulation):
                 self._triangle_errors[new_i] = olderrors[mp]
             else:
                 input_triangle = self.get_triangle(new_i)
-                self.colors[new_i], self._triangle_errors[new_i] = parallel_sum(self.img, input_triangle, True)
+                self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
 
 
 
@@ -169,7 +188,7 @@ class TriangleMesh(Triangulation):
 
         # get a new triangulation without the killed point
         # sort that too
-        newtriangles = TriangleMesh._sort_and_copy(self.triangles)
+        newtriangles = TriangleMesh._sort_and_copy(self.triangles)[0]
         # a copy thats pointing to old points
         mutated = np.copy(newtriangles)
         mutated[mutated >= kill] += 1
@@ -184,7 +203,6 @@ class TriangleMesh(Triangulation):
                 vertices = newtriangles[new_i]
                 input_triangle = np.array([self.x[vertices], self.y[vertices]])
                 self.colors[new_i], self._triangle_errors[new_i] = triangle_sum(self.img, input_triangle, True)
-                self.colors[new_i] = (0, 1, 0)
 
         self.triangles = newtriangles
 
@@ -246,7 +264,7 @@ def main():
     img = np.flipud(img)
 
     print "Running Delaunay triangulation"
-    dln = TriangleMesh(img, 5000)
+    dln = TriangleMesh(img, 1000)
 
     print "Caluclating triangle colors"
     dln.parallel_colorize(return_error=True)
