@@ -163,13 +163,13 @@ class TriangleMesh(Triangulation):
 
     def kill_point(self, kill):
         # sort the old points
-        oldtriangles, oldcolors = self._get_ascending_order(self.triangles, self.colors)
+        oldtriangles, oldcolors, olderrors = TriangleMesh._sort_and_copy(self.triangles, self.colors, self._triangle_errors)
         # kill the point
         self._remove_point(kill)
 
         # get a new triangulation without the killed point
         # sort that too
-        newtriangles = self._get_ascending_order(self.triangles)
+        newtriangles = TriangleMesh._sort_and_copy(self.triangles)
         # a copy thats pointing to old points
         mutated = np.copy(newtriangles)
         mutated[mutated >= kill] += 1
@@ -259,7 +259,10 @@ def main():
         # dln.get_point_errors()
         ind = np.argmax(dln._triangle_errors)
         dln.generate_point(ind)
-        if i % 100 == 0:
+        dln.get_point_errors()
+        ind = np.argmin(dln._point_errors)
+        dln.kill_point(ind)
+        if i % 10 == 0:
             ax = plotter.draw_mesh(dln, ax)
 
 
