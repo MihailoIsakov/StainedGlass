@@ -4,12 +4,16 @@ __pycache__/
 # C extensions
 *.so
 
+#line_profiler files
+*.lprof
+
 
 # Distribution / packaging
 .idea/
 .Python
 exp/
 profiles/
+presentation/
 images/
 env/
 build/
@@ -25,3 +29,4 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+

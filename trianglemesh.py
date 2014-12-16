@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 __author__ = 'zieghailo'
 
 import sys
@@ -42,7 +44,10 @@ class TriangleMesh(Triangulation):
         """
         self.x = np.delete(self.x, kill)
         self.y = np.delete(self.y, kill)
-        Triangulation.__init__(self, self.x, self.y)
+        try:
+            Triangulation.__init__(self, self.x, self.y)
+        except Exception:
+            pass
 
     def _add_point(self, x, y):
         """
@@ -52,7 +57,10 @@ class TriangleMesh(Triangulation):
         """
         self.x = np.append(self.x, x)
         self.y = np.append(self.y, y)
-        Triangulation.__init__(self, self.x, self.y)
+        try:
+            Triangulation.__init__(self, self.x, self.y)
+        except Exception:
+            pass
 
     @staticmethod
     def _get_ascending_order(triangles):
@@ -189,7 +197,10 @@ class TriangleMesh(Triangulation):
 
             self.x = newx
             self.y = newy
-            Triangulation.__init__(self, self.x, self.y)
+            try:
+                Triangulation.__init__(self, self.x, self.y)
+            except Exception:
+                pass
 
             self._recycle(oldtriangles, oldcolors, olderrors)
             error_sum = np.sum(self._triangle_errors)
@@ -201,7 +212,10 @@ class TriangleMesh(Triangulation):
         self.x = oldx
         self.y = oldy
         self.x[point] += directions[max_ind][0] * delta
+        self.x[point] = max(0, min(self.x[point], self.img.shape[0]))
         self.y[point] += directions[max_ind][1] * delta
+        self.y[point] = max(0, min(self.y[point], self.img.shape[1]))
+
         Triangulation.__init__(self, self.x, self.y)
         self._recycle(oldtriangles, oldcolors, olderrors)
 
