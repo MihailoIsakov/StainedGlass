@@ -20,6 +20,11 @@ class TriangleMesh(Triangulation):
     _triangle_errors = []
     _point_errors = []
 
+    # values to be stored before modifications are made
+    _stored_triangles = []
+    _stored_colors    = []
+    _stored_errors    = []
+
     def __init__(self, img, N):
         self.img = img
         self.randomize(N)
@@ -141,6 +146,15 @@ class TriangleMesh(Triangulation):
 
         return res
 
+    def _store(self):
+        """
+        Sort and saves the current state of the triangles, their positions, colors and errors.
+        After that the user is free to make changes, and _recycle() will map the old triangle values
+        to the newly generated.
+        """
+        self._stored_triangles, self._stored_colors, self._stored_errors = \
+            TriangleMesh._sort_and_copy(self.triangles, self.colors, self._triangle_errors)
+
     def _recycle(self, old_triangles, old_colors, old_errors):
         self.triangles = TriangleMesh._sort_and_copy(self.triangles)[0]
         N = self.triangles.shape[0]
@@ -159,13 +173,14 @@ class TriangleMesh(Triangulation):
 
     def generate_point(self, tri_ind):
         # sort the old points
-        oldtriangles, oldcolors, olderrors = TriangleMesh._sort_and_copy(self.triangles, self.colors, self._triangle_errors)
+        self._store()
+
         # add the point
         triangle = self.get_triangle(tri_ind)
         gen = rand_point_in_triangle(triangle)
         self._add_point(gen[0], gen[1])
 
-        self._recycle(oldtriangles, oldcolors, olderrors)
+        self._recycle(self._stored_triangles, self._stored_colors, self._stored_errors)
 
     def kill_point(self, kill):
         # sort the old points
