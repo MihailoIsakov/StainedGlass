@@ -41,7 +41,7 @@ class Point(object):
         try:
             del(self._triangles[index])
         except IndexError:
-            print("IndexError: point triangle index out of range")
+            print("IndexError: triangle index out of range")
 
 
     def _randomize(self, maxx, maxy):
