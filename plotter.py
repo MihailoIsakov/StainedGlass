@@ -12,6 +12,14 @@ def start(size = (20,10)):
     return ax
 
 
+def plot_mesh_collection(collection, ax):
+    ax.add_collection(collection)
+    ax.autoscale_view()
+    ax.axis('equal')
+    plt.draw()
+    return ax
+
+
 def draw_mesh(mesh, ax):
     mesh.build_collection()
     pcol = mesh.collection

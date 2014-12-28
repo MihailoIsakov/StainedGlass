@@ -1,8 +1,12 @@
 __author__ = 'zieghailo'
 import numpy as np
 from matplotlib.tri import Triangulation
+from matplotlib.patches import Polygon
+from matplotlib.collections import PatchCollection
+
 from point import Point
 from triangle import Triangle
+from meshcollection import MeshCollection
 
 class Mesh(object):
 
@@ -11,6 +15,7 @@ class Mesh(object):
         self._points = []
         self._triangles = []
         self._img = img
+        self._triangulation = None
 
         self._randomize()
 
@@ -25,6 +30,10 @@ class Mesh(object):
     @property
     def triangles(self):
         return self._triangles
+
+    @property
+    def colors(self):
+        return [t.color for t in self.triangles]
 
     def _randomize(self):
         # TODO maybe we need to reverse height and width?
@@ -72,13 +81,27 @@ class Mesh(object):
 
         return None
 
+
 def main():
+    print "Running mesh.py"
+
     global m
     import cv2
 
     img = cv2.imread('images/lion.jpg')
     m = Mesh(img, 100)
     m.delaunay()
+
+    for tr in m.triangles:
+        tr.colorize(m.image)
+        print tr.color
+
+    import plotter
+    col = MeshCollection(m.triangles, m.colors)
+    ax = plotter.start()
+    ax = plotter.plot_mesh_collection(col, ax)
+
+    plotter.keep_plot_open()
 
 if __name__ == "__main__":
     main()
