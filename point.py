@@ -11,7 +11,8 @@ class Point(object):
             # if the user wants to set specific values
             self.x = x
             self.y = y
-        self._triangles = []
+
+        self._triangles = set([])
         self._error = np.nan
 
     @property
@@ -25,6 +26,16 @@ class Point(object):
     @property
     def triangles(self):
         return self._triangles
+
+    @property
+    def error(self):
+        error = 0
+        for t in self._triangles:
+            try:
+                error += t.error
+            except TypeError:
+                pass
+        return error
 
     @x.setter
     def x(self, val):
