@@ -3,8 +3,8 @@
 __author__ = 'zieghailo'
 import numpy as np
 from matplotlib.tri import Triangulation
-from matplotlib.patches import Polygon
-from matplotlib.collections import PatchCollection
+from multiprocessing import Process
+from time import clock
 
 from point import Point
 from triangle import Triangle
@@ -87,7 +87,7 @@ class Mesh(object):
 
         new_point = p1 + p2 * s + p3 * t
         self.add_point(Point(x=new_point[0], y=new_point[1]))
-        self.remove_triangle(triangle)
+        # self.remove_triangle(triangle)
 
     def create_triangle(self, vertices):
         tr = Triangle(self, vertices)
@@ -111,18 +111,15 @@ class Mesh(object):
         self._triangulation = Triangulation(x, y)
         self._triangle_stack = []
 
-        counter = 0
         for i, t in enumerate(self._triangulation.triangles):
             triangle = self._triangle_exists(t)
 
             if triangle is not None:
                 triangle.used = True  # this is how we know not to discard the triangle
             else:
-                counter += 1
                 vertices = [self.points[l] for l in t]
                 self.create_triangle(vertices)
 
-        print("counter: ", counter)
         for tr in self.triangles:
             if not tr.used:
                 self.remove_triangle(tr)
@@ -148,20 +145,32 @@ class Mesh(object):
         return triangle
 
     def evolve(self):
-        maxerr = np.argmax(self.triangle_errors)
-        print("maxerr:", maxerr)
-        self.split_triangle(self.triangles[maxerr])
+        # TODO somethings really fishy here
         minerr = np.argmin(self.point_errors)
-        print("minerr:", minerr)
-        self.remove_point_at(int(len(self.points) * np.random.rand()))
+        self.remove_point_at(minerr)
+        maxerr = np.argmax(self.triangle_errors)
+        self.split_triangle(self.triangles[maxerr])
+
         self.delaunay()
 
-        print("stack length", len(self._triangle_stack))
-        while len(self._triangle_stack) > 0:
-            triangle = self._triangle_stack.pop()
+        jobs = []
+        for tr in self._triangle_stack:
+            print("jobs: ",len(self._triangle_stack))
+            p = Process(target=tr.colorize)
+            jobs.append(p)
+            p.start()
 
-            triangle.colorize()
-            # triangle._color = (0,1,0)
+        for job in jobs:
+            job.join()
+
+        for tr in self._triangle_stack:
+            print tr.color
+
+        # # print("stack length", len(self._triangle_stack))
+        # while len(self._triangle_stack) > 0:
+        #     triangle = self._triangle_stack.pop()
+        #
+        #     triangle.colorize()
 
 def main():
     print "Running mesh.py"
@@ -183,14 +192,19 @@ def main():
     ax = plotter.start()
     ax = plotter.plot_mesh_collection(col, ax)
 
+    past = 0
+    now = 0
     for i in range(100000):
         m.evolve()
 
-        if i % 1 == 0:
-            print("triangle num: ", len(m.triangles))
-            for t in m.triangles:
-                if t.color is None:
+        if i % 100 == 0:
+            past = now
+            now = clock()
+            print now - past
+            for i, t in enumerate(m.triangles):
+                if t._color is None:
                     t._color = (0,0,0)
+                    print i
             col = MeshCollection(m.triangles, m.colors)
             ax = plotter.plot_mesh_collection(col, ax)
 

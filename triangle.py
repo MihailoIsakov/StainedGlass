@@ -15,7 +15,7 @@ class Triangle(object):
         self._flatten_vertices()
         self.used = False
         for v in self._vertices:
-            v.triangles.add(self)
+            v.add_triangle(self)
 
         self._color = None
         self._error = None
@@ -25,7 +25,7 @@ class Triangle(object):
             try:
                 v.triangles.remove(self)
             except ValueError:
-                pass
+                print "ValueError: cannot remove triangle"
 
     @property
     def vertices(self):

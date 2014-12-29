@@ -46,7 +46,7 @@ class Point(object):
         self._y = val
 
     def add_triangle(self, triangle):
-        self._triangles.append(triangle)
+        self._triangles.add(triangle)
 
     def remove_triangle(self, index):
         try:
