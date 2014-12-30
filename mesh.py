@@ -3,12 +3,14 @@
 __author__ = 'zieghailo'
 import numpy as np
 from matplotlib.tri import Triangulation
-from multiprocessing import Process
+from multiprocessing import Pool
+import functools
 from time import clock
 
 from point import Point
 from triangle import Triangle
 from meshcollection import MeshCollection
+from trimath import triangle_sum
 
 
 class Mesh(object):
@@ -153,24 +155,39 @@ class Mesh(object):
 
         self.delaunay()
 
-        jobs = []
-        for tr in self._triangle_stack:
-            print("jobs: ",len(self._triangle_stack))
-            p = Process(target=tr.colorize)
-            jobs.append(p)
-            p.start()
+        self.colorize_stack()
+        # jobs = []
+        # for tr in self._triangle_stack:
+        #     print("jobs: ",len(self._triangle_stack))
+        #     p = Process(target=tr.colorize)
+        #     jobs.append(p)
+        #     p.start()
+        #
+        # for job in jobs:
+        #     job.join()
+        #
+        # for tr in self._triangle_stack:
+        #     print tr.color
 
-        for job in jobs:
-            job.join()
-
-        for tr in self._triangle_stack:
-            print tr.color
-
-        # # print("stack length", len(self._triangle_stack))
+        # print("stack length", len(self._triangle_stack))
         # while len(self._triangle_stack) > 0:
         #     triangle = self._triangle_stack.pop()
-        #
         #     triangle.colorize()
+
+    def colorize_stack(self):
+        f = functools.partial(triangle_sum, self.image)
+
+        stack_vertices = [t.flat_vertices for t in self._triangle_stack]
+
+        pool = Pool()
+        result = pool.map(f, stack_vertices)
+        pool.close()
+        pool.join()
+
+        for i, tr in enumerate(self._triangle_stack):
+            self._triangle_stack[i]._color = result[i][0]
+            self._triangle_stack[i]._error = result[i][1]
+
 
 def main():
     print "Running mesh.py"

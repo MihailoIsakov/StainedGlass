@@ -43,6 +43,10 @@ class Triangle(object):
     def error(self):
         return self._error
 
+    @property
+    def image(self):
+        return self._mesh.image
+
     def colorize(self):
         self._color, self._error = triangle_sum(self._mesh.image, self.flat_vertices, get_error=True)
 
