@@ -53,17 +53,11 @@ class Point(object):
         self._triangles.add(triangle)
         self._calc_error()
 
-
-    def remove_triangle_at(self, index):
-        try:
-            del(self._triangles[index])
-        except IndexError:
-            print("IndexError: triangle index out of range")
-        self._calc_error()
-
-
     def remove_triangle(self, triangle):
-        self._triangles.remove(triangle)
+        try:
+            self._triangles.discard(triangle)
+        except KeyError:
+            print("KeyError: attempted to remove a triangle not in set")
         self._calc_error()
 
     def _randomize(self, maxx, maxy):

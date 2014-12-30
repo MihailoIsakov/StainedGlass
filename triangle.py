@@ -19,7 +19,6 @@ class Triangle(object):
         for v in self._vertices:
             v.add_triangle(self)
 
-
     def delete(self):
         for v in self._vertices:
             try:
