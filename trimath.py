@@ -84,10 +84,6 @@ def triangle_sum(img, tr, get_error=True):
     return tuple(color / 255.0)
 
 
-def colorize_triangle(triangle):
-    return triangle_sum(triangle.image, triangle._flat_vertices)
-
-
 def _get_rect(tr):
     _north = np.ceil(np.amax(tr[1])).astype(int)
     _south = np.floor(np.amin(tr[1])).astype(int)

@@ -14,16 +14,16 @@ class Triangle(object):
         self._vertices = verts
         self._flatten_vertices()
         self.used = False
+        self._color = None
+        self._error = 0
         for v in self._vertices:
             v.add_triangle(self)
 
-        self._color = None
-        self._error = None
 
     def delete(self):
         for v in self._vertices:
             try:
-                v.triangles.remove(self)
+                v.remove_triangle(self)
             except ValueError:
                 print "ValueError: cannot remove triangle"
 

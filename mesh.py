@@ -5,12 +5,23 @@ import numpy as np
 from matplotlib.tri import Triangulation
 from multiprocessing import Pool
 import functools
-from time import clock
+from time import time
 
 from point import Point
 from triangle import Triangle
 from meshcollection import MeshCollection
 from trimath import triangle_sum
+
+# region needed so that @profile doesn't cause an error
+import __builtin__
+
+try:
+    __builtin__.profile
+except AttributeError:
+    # No line profiler, provide a pass-through version
+    def profile(func): return func
+    __builtin__.profile = profile
+# endregion
 
 
 class Mesh(object):
@@ -110,7 +121,13 @@ class Mesh(object):
         y = [p.y for p in self.points]
         for t in self.triangles: t.used = False
 
-        self._triangulation = Triangulation(x, y)
+        while True:
+            try:
+                self._triangulation = Triangulation(x, y)
+            except Exception:
+                pass
+            break
+
         self._triangle_stack = []
 
         for i, t in enumerate(self._triangulation.triangles):
@@ -146,48 +163,36 @@ class Mesh(object):
             triangle = None
         return triangle
 
+    @profile
     def evolve(self):
         # TODO somethings really fishy here
         minerr = np.argmin(self.point_errors)
+        print(minerr, self.point_errors[minerr])
+        print(self.points[minerr].x, self.points[minerr].y)
         self.remove_point_at(minerr)
         maxerr = np.argmax(self.triangle_errors)
         self.split_triangle(self.triangles[maxerr])
 
         self.delaunay()
+        self.colorize_stack(parallel=False)
 
-        self.colorize_stack()
-        # jobs = []
-        # for tr in self._triangle_stack:
-        #     print("jobs: ",len(self._triangle_stack))
-        #     p = Process(target=tr.colorize)
-        #     jobs.append(p)
-        #     p.start()
-        #
-        # for job in jobs:
-        #     job.join()
-        #
-        # for tr in self._triangle_stack:
-        #     print tr.color
+    def colorize_stack(self, parallel=True):
+        if parallel:
+            f = functools.partial(triangle_sum, self.image)
 
-        # print("stack length", len(self._triangle_stack))
-        # while len(self._triangle_stack) > 0:
-        #     triangle = self._triangle_stack.pop()
-        #     triangle.colorize()
+            stack_vertices = [t.flat_vertices for t in self._triangle_stack]
 
-    def colorize_stack(self):
-        f = functools.partial(triangle_sum, self.image)
+            pool = Pool()
+            result = map(f, stack_vertices)
+            pool.close()
+            pool.join()
 
-        stack_vertices = [t.flat_vertices for t in self._triangle_stack]
-
-        pool = Pool()
-        result = pool.map(f, stack_vertices)
-        pool.close()
-        pool.join()
-
-        for i, tr in enumerate(self._triangle_stack):
-            self._triangle_stack[i]._color = result[i][0]
-            self._triangle_stack[i]._error = result[i][1]
-
+            for i, tr in enumerate(self._triangle_stack):
+                self._triangle_stack[i]._color = result[i][0]
+                self._triangle_stack[i]._error = result[i][1]
+        else:
+            for t in self._triangle_stack:
+                t.colorize()
 
 def main():
     print "Running mesh.py"
@@ -209,15 +214,16 @@ def main():
     ax = plotter.start()
     ax = plotter.plot_mesh_collection(col, ax)
 
-    past = 0
+    past = time()
     now = 0
     for i in range(100000):
         m.evolve()
 
         if i % 100 == 0:
-            past = now
-            now = clock()
+            now = time()
             print now - past
+            past = now
+
             for i, t in enumerate(m.triangles):
                 if t._color is None:
                     t._color = (0,0,0)

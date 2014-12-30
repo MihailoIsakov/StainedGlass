@@ -29,13 +29,17 @@ class Point(object):
 
     @property
     def error(self):
+        # self._calc_error()
+        return self._error
+
+    def _calc_error(self):
         error = 0
         for t in self._triangles:
             try:
                 error += t.error
             except TypeError:
                 pass
-        return error
+        self._error = error
 
     @x.setter
     def x(self, val):
@@ -47,13 +51,20 @@ class Point(object):
 
     def add_triangle(self, triangle):
         self._triangles.add(triangle)
+        self._calc_error()
 
-    def remove_triangle(self, index):
+
+    def remove_triangle_at(self, index):
         try:
             del(self._triangles[index])
         except IndexError:
             print("IndexError: triangle index out of range")
+        self._calc_error()
 
+
+    def remove_triangle(self, triangle):
+        self._triangles.remove(triangle)
+        self._calc_error()
 
     def _randomize(self, maxx, maxy):
         self.x = np.random.rand() * maxx
