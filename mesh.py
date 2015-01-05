@@ -99,8 +99,9 @@ class Mesh(object):
                 break
 
         new_point = p1 + p2 * s + p3 * t
-        self.add_point(Point(x=new_point[0], y=new_point[1]))
-        # self.remove_triangle(triangle)
+        point = Point(x=new_point[0], y=new_point[1])
+        self.add_point(point)
+        return point
 
     def create_triangle(self, vertices):
         tr = Triangle(self, vertices)
@@ -116,6 +117,7 @@ class Mesh(object):
             print("ValueError: removing nonexistent triangle")
             pass
 
+    @profile
     def delaunay(self):
         x = [p.x for p in self.points]
         y = [p.y for p in self.points]
@@ -150,12 +152,12 @@ class Mesh(object):
         :param point_list: indices of three points defining a triangle
         :return: The triangle specified by the point_list if it exists, and its index. Otherwise returns None.
         """
-        point_set = set(point_list)
-        points = [self.points[i] for i in point_list]
+        points = self.points
+        result = \
+            points[point_list[0]].triangles & \
+            points[point_list[1]].triangles & \
+            points[point_list[2]].triangles
 
-        result = points[0].triangles
-        for p in points:
-            result = result & p.triangles
         # will return True if the set isn't empty
         try:
             triangle = result.pop()
@@ -167,8 +169,6 @@ class Mesh(object):
     def evolve(self):
         # TODO somethings really fishy here
         minerr = np.argmin(self.point_errors)
-        print(minerr, self.point_errors[minerr])
-        print(self.points[minerr].x, self.points[minerr].y)
         self.remove_point_at(minerr)
         maxerr = np.argmax(self.triangle_errors)
         self.split_triangle(self.triangles[maxerr])
@@ -193,6 +193,7 @@ class Mesh(object):
         else:
             for t in self._triangle_stack:
                 t.colorize()
+
 
 def main():
     print "Running mesh.py"
@@ -224,10 +225,6 @@ def main():
             print now - past
             past = now
 
-            for i, t in enumerate(m.triangles):
-                if t._color is None:
-                    t._color = (0,0,0)
-                    print i
             col = MeshCollection(m.triangles, m.colors)
             ax = plotter.plot_mesh_collection(col, ax)
 

@@ -7,17 +7,20 @@ class Triangle(object):
     def __init__(self, mesh, verts):
         """
         Initializes the vertices, the color and the error of the triangle.
-        :param verts: a set of Points.
+        :param verts: a set or list of Points.
         :return:
         """
         self._mesh = mesh
-        self._vertices = verts
+        self._vertices = set(verts)
         self._flatten_vertices()
         self.used = False
         self._color = None
         self._error = 0
         for v in self._vertices:
             v.add_triangle(self)
+
+    def __eq__(self, other):
+        return self.vertices == other.vertices
 
     def delete(self):
         for v in self._vertices:
