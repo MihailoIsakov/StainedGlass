@@ -166,12 +166,18 @@ class Mesh(object):
         return triangle
 
     @profile
-    def evolve(self):
+    def evolve(self, maxerr = 1000, minerr=500):
         # TODO somethings really fishy here
-        minerr = np.argmin(self.point_errors)
-        self.remove_point_at(minerr)
-        maxerr = np.argmax(self.triangle_errors)
-        self.split_triangle(self.triangles[maxerr])
+        for p in self.points:
+            if p.error < minerr:
+                self.remove_point(p)
+
+        self.delaunay()
+        self.colorize_stack(parallel=False)
+
+        for tr in self.triangles:
+            if tr.error > maxerr:
+                self.split_triangle(tr)
 
         self.delaunay()
         self.colorize_stack(parallel=False)
@@ -220,7 +226,7 @@ def main():
     for i in range(100000):
         m.evolve()
 
-        if i % 100 == 0:
+        if i % 1 == 0:
             now = time()
             print now - past
             past = now
