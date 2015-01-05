@@ -14,6 +14,10 @@ class Point(object):
 
         self._triangles = set([])
         self._error = np.nan
+        self._direction = {'x': None, 'y': None}
+        self._least_error = np.inf
+        self._best_position = {x: None, y: None}
+        self._randomize_direction()
 
     @property
     def x(self):
@@ -40,6 +44,10 @@ class Point(object):
             except TypeError:
                 pass
         self._error = error
+        if error < self._least_error:
+            self._least_error = error
+            self._best_position = {'x': self.x, 'y': self.y}
+
 
     @x.setter
     def x(self, val):
@@ -60,7 +68,27 @@ class Point(object):
             print("KeyError: attempted to remove a triangle not in set")
         self._calc_error()
 
+    def move(self, delta=1, epsilon=0.1):
+        self.x += self._direction['x']
+        self.y += self._direction['y']
+
+        dx = self._best_position['x'] - self._direction['x']
+        dy = self._best_position['y'] - self._direction['y']
+        n = float(dx*dx + dy*dy)
+        dx *= epsilon / n
+        dy *= epsilon / n
+
+        self._direction['x'] += dx
+        self._direction['y'] += dy
+        self._least_error *= 1.1
+
     def _randomize(self, maxx, maxy):
         self.x = np.random.rand() * maxx
         self.y = np.random.rand() * maxy
+
+    def _randomize_direction(self):
+        self._direction = {
+            'x': np.random.rand() * 2 - 1,
+            'y': np.random.rand() * 2 - 1
+        }
 

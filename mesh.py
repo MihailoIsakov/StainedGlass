@@ -168,16 +168,18 @@ class Mesh(object):
     @profile
     def evolve(self, maxerr = 1000, minerr=500):
         # TODO somethings really fishy here
+        # for p in self.points:
+        #     if p.error < minerr:
+        #         self.remove_point(p)
+        #
+        # self.delaunay()
+        # self.colorize_stack(parallel=False)
+        #
+        # for tr in self.triangles:
+        #     if tr.error > maxerr:
+        #         self.split_triangle(tr)
         for p in self.points:
-            if p.error < minerr:
-                self.remove_point(p)
-
-        self.delaunay()
-        self.colorize_stack(parallel=False)
-
-        for tr in self.triangles:
-            if tr.error > maxerr:
-                self.split_triangle(tr)
+            p.move()
 
         self.delaunay()
         self.colorize_stack(parallel=False)
