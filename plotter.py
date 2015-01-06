@@ -13,6 +13,7 @@ def start(size = (20,10)):
 
 
 def plot_mesh_collection(collection, ax):
+    ax.clear()
     ax.add_collection(collection)
     ax.autoscale_view()
     ax.axis('equal')

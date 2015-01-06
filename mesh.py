@@ -42,12 +42,12 @@ class Mesh(object):
         h, w = self.image.shape[:2]
 
         for i in range(self.N - 4):
-            self.points.append(Point(max_x=w, max_y=h))
+            self.points.append(Point(w, h))
 
-        self.points.append(Point(x=0, y=0))
-        self.points.append(Point(x=w, y=0))
-        self.points.append(Point(x=0, y=h))
-        self.points.append(Point(x=w, y=h))
+        self.points.append(Point(w, h, x=0, y=0))
+        self.points.append(Point(w, h, x=w, y=0))
+        self.points.append(Point(w, h, x=0, y=h))
+        self.points.append(Point(w, h, x=w, y=h))
 
     # region properties
     @property
@@ -61,6 +61,10 @@ class Mesh(object):
     @property
     def triangles(self):
         return self._triangles
+
+    @property
+    def error(self):
+        return sum(tr.error for tr in self.triangles)
 
     @property
     def colors(self):
@@ -179,7 +183,7 @@ class Mesh(object):
         #     if tr.error > maxerr:
         #         self.split_triangle(tr)
         for p in self.points:
-            p.move()
+            p.move(delta=1)
 
         self.delaunay()
         self.colorize_stack(parallel=False)
