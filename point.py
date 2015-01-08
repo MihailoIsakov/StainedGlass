@@ -4,6 +4,7 @@ import numpy as np
 class Point(object):
 
     def __init__(self, max_x, max_y, x=np.nan, y=np.nan):
+        self._position = np.zeros(2)
         if max_x is not None and max_y is not None:
             # the user wants to create a random point
             self._randomize(max_x, max_y)
@@ -23,11 +24,23 @@ class Point(object):
 
     @property
     def x(self):
-        return self._x
+        return self._position[0]
 
     @property
     def y(self):
-        return self._y
+        return self._position[1]
+
+    @x.setter
+    def x(self, val):
+        self._position[0] = val
+
+    @y.setter
+    def y(self, val):
+        self._position[1] = val
+
+    @property
+    def position(self):
+        return self._position
 
     @property
     def triangles(self):
@@ -49,15 +62,6 @@ class Point(object):
         if error < self._least_error:
             self._least_error = error
             self._best_position = {'x': self.x, 'y': self.y}
-
-
-    @x.setter
-    def x(self, val):
-        self._x = val
-
-    @y.setter
-    def y(self, val):
-        self._y = val
 
     def add_triangle(self, triangle):
         self._triangles.add(triangle)

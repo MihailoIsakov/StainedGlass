@@ -27,7 +27,7 @@ class Triangle(object):
             try:
                 v.remove_triangle(self)
             except ValueError:
-                print "ValueError: cannot remove triangle"
+                print("ValueError: cannot remove triangle")
 
     @property
     def vertices(self):

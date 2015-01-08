@@ -2,7 +2,6 @@ __author__ = 'zieghailo'
 
 import unittest
 from point import Point
-from triangle import Triangle
 
 class PointTest(unittest.TestCase):
 
@@ -12,8 +11,8 @@ class PointTest(unittest.TestCase):
         self.p3 = Point(x=80, y=15)
         self.p4 = Point(x=30, y=21)
 
-        self.t1 = Triangle(None, [self.p1, self.p2, self.p3])
-        self.t2 = Triangle(None, [self.p1, self.p2, self.p4])
+        # self.t1 = Triangle(None, [self.p1, self.p2, self.p3])
+        # self.t2 = Triangle(None, [self.p1, self.p2, self.p4])
         self.t1._error = 100
         self.t2._error = 50
 

@@ -2,6 +2,7 @@ __author__ = 'zieghailo'
 
 import numpy as np
 from collections import namedtuple
+from support import lru_cache
 
 
 Rect = namedtuple('Rect', ['north', 'south', 'east', 'west'])
@@ -49,7 +50,7 @@ def _y_intersects(y, tr):
         return np.array([xab, xac, xbc])
 
 
-def triangle_sum(img, tr, get_error=True):
+def triangle_sum(img, tr):
     """
     Returns the average RGB value for the pixels in the triangle tr,
     for the image img.
@@ -75,13 +76,10 @@ def triangle_sum(img, tr, get_error=True):
     color = color / num_of_pixels
 
     error = np.array(0)
-    if get_error:
-        for y in range(rect.south, rect.north + 1): # get the error of the triangle
-            dy = y - rect.south
-            error += _sum_row_error(img, color, y, borders[dy])
-        return tuple(color / 255.0), error
-
-    return tuple(color / 255.0)
+    for y in range(rect.south, rect.north + 1): # get the error of the triangle
+        dy = y - rect.south
+        error += _sum_row_error(img, color, y, borders[dy])
+    return tuple(color / 255.0), error
 
 
 def _get_rect(tr):

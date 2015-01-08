@@ -6,11 +6,13 @@ from matplotlib.tri import Triangulation
 from multiprocessing import Pool
 import functools
 from time import time
+from collections import deque
 
 from point import Point
-from triangle import Triangle
-from meshcollection import MeshCollection
+from meshcollection import FlatMeshCollection
 from trimath import triangle_sum
+from support.lru_cache import LRUCache
+from support.numpy_hash import hashable
 
 # region needed so that @profile doesn't cause an error
 import __builtin__
@@ -30,9 +32,12 @@ class Mesh(object):
         self.N = n
         self._img = img
 
+        # TODO maybe implement it as a linked list so that removing points from the middle and appending is faster?
         self._points = []
-        self._triangles = []
-        self._triangle_stack = []
+        self._triangles = deque()
+
+        self._triangle_stack = deque()
+        self._triangle_cache = LRUCache(8192)
 
         self._triangulation = None
         self._randomize()
@@ -90,6 +95,11 @@ class Mesh(object):
         self.points.append(new_point)
 
     def split_triangle(self, triangle):
+        """
+        Creates a point inside the triangle, thereby splitting it.
+        :param triangle: 3x2 numpy array, each collumn is a
+        :return: the created point
+        """
         p1 = triangle.flat_vertices[:, 0]
         p2 = triangle.flat_vertices[:, 1]
         p3 = triangle.flat_vertices[:, 2]
@@ -107,137 +117,132 @@ class Mesh(object):
         self.add_point(point)
         return point
 
-    def create_triangle(self, vertices):
-        tr = Triangle(self, vertices)
-        tr.used = True
-        self.triangles.append(tr)
-        self._triangle_stack.append(tr)
+    def get_triangle(self, point_indices):
+        """
+        Gets the coordinates of the triangle from indices of three points in self.points
+        :param point_indices: indices of three points in self.points
+        :return: 2x3 numpy array of triangle vertices coordinates
+        """
+        triangle = np.zeros([2, 3])
+        triangle[:, 0] = self.points[point_indices[0]].position
+        triangle[:, 1] = self.points[point_indices[1]].position
+        triangle[:, 2] = self.points[point_indices[2]].position
+        return triangle
 
-    def remove_triangle(self, triangle):
-        triangle.delete()
+    def get_color(self, triangle):
+        result = self.process_triangle(triangle)
+        if result is None:
+            raise KeyError("The triangle was not previously colorized.")
+        return result[0]
+
+    def process_triangle(self, triangle):
+        """
+        Lookup the color/error of the triangle. If the result has already been calculated,
+        return it. Otherwise, add it to the triangle stack and return None.
+        :param triangle: 2x3 numpy array of the triangles coordinates.
+        :return: color and error tuple if the result was calculated before, otherwise None.
+        """
+        hashed = hashable(triangle)
         try:
-            self.triangles.remove(triangle)
-        except ValueError:
-            print("ValueError: removing nonexistent triangle")
-            pass
+            result = self._triangle_cache.get(hashed)
+        except KeyError:
+            self._triangle_stack.append(triangle)
+            result = None
+        return result
 
-    @profile
     def delaunay(self):
-        x = [p.x for p in self.points]
-        y = [p.y for p in self.points]
-        for t in self.triangles: t.used = False
+        """
+        Triangulate the current points, salvage results from the cache,
+        add missing results to the stack.
+        """
+        x = np.array([p.x for p in self.points])
+        y = np.array([p.y for p in self.points])
+        self._triangles = deque()
 
         while True:
             try:
                 self._triangulation = Triangulation(x, y)
             except Exception:
-                pass
+                print("Triangulation failed, repeating.")
+                print x
+                continue
             break
 
-        self._triangle_stack = []
-
+        # goes through the triangles and sifts the new ones out, throws them on the stack
         for i, t in enumerate(self._triangulation.triangles):
-            triangle = self._triangle_exists(t)
+            triangle = self.get_triangle(t)
+            self._triangles.append(triangle)
+            self.process_triangle(triangle)
 
-            if triangle is not None:
-                triangle.used = True  # this is how we know not to discard the triangle
-            else:
-                vertices = [self.points[l] for l in t]
-                self.create_triangle(vertices)
-
-        for tr in self.triangles:
-            if not tr.used:
-                self.remove_triangle(tr)
-
-    def _triangle_exists(self, point_list):
-        """
-        Goes through the list of triangles, and compares
-        their vertices to the three points given by the point_list
-        :param point_list: indices of three points defining a triangle
-        :return: The triangle specified by the point_list if it exists, and its index. Otherwise returns None.
-        """
-        points = self.points
-        result = \
-            points[point_list[0]].triangles & \
-            points[point_list[1]].triangles & \
-            points[point_list[2]].triangles
-
-        # will return True if the set isn't empty
-        try:
-            triangle = result.pop()
-        except KeyError:
-            triangle = None
-        return triangle
-
-    @profile
-    def evolve(self, maxerr = 1000, minerr=500):
+    def evolve(self, maxerr = 1000, minerr=1000):
         # TODO somethings really fishy here
-        # for p in self.points:
-        #     if p.error < minerr:
-        #         self.remove_point(p)
-        #
-        # self.delaunay()
-        # self.colorize_stack(parallel=False)
+        for p in self.points:
+            if p.error < minerr:
+                self.remove_point(p)
+
+        self.delaunay()
+        self.colorize_stack(parallel=False)
         #
         # for tr in self.triangles:
         #     if tr.error > maxerr:
         #         self.split_triangle(tr)
-        for p in self.points:
-            p.move(delta=1)
+        # for p in self.points:
+        #     p.move(delta=1)
 
         self.delaunay()
         self.colorize_stack(parallel=False)
 
-    def colorize_stack(self, parallel=True):
-        if parallel:
-            f = functools.partial(triangle_sum, self.image)
-
-            stack_vertices = [t.flat_vertices for t in self._triangle_stack]
-
-            pool = Pool()
-            result = map(f, stack_vertices)
-            pool.close()
-            pool.join()
-
-            for i, tr in enumerate(self._triangle_stack):
-                self._triangle_stack[i]._color = result[i][0]
-                self._triangle_stack[i]._error = result[i][1]
+    def colorize_stack(self, parallel=False):
+        if not parallel:
+            while len(self._triangle_stack) > 0:
+                triangle = self._triangle_stack.pop()
+                result = triangle_sum(self.image, triangle)
+                self._triangle_cache.set(hashable(triangle), result)
         else:
-            for t in self._triangle_stack:
-                t.colorize()
-
+            raise NotImplementedError
+            # f = functools.partial(triangle_sum, self.image)
+            #
+            # stack_vertices = [t.flat_vertices for t in self._triangle_stack]
+            #
+            # pool = Pool()
+            # result = map(f, stack_vertices)
+            # pool.close()
+            # pool.join()
+            #
+            # for i, tr in enumerate(self._triangle_stack):
+            #     self._triangle_stack[i]._color = result[i][0]
+            #     self._triangle_stack[i]._error = result[i][1]
 
 def main():
-    print "Running mesh.py"
+    print("Running mesh.py")
 
-    global m
+    global mesh
     import cv2
-
     img = cv2.imread('images/lion.jpg')
     img = np.flipud(img)
 
-    m = Mesh(img, 1000)
-    m.delaunay()
-
-    for tr in m.triangles:
-        tr.colorize()
+    mesh = Mesh(img, 1000)
+    print "Triangulating."
+    mesh.delaunay()
+    print "Coloring."
+    mesh.colorize_stack()
 
     import plotter
-    col = MeshCollection(m.triangles, m.colors)
+    col = FlatMeshCollection(mesh)
     ax = plotter.start()
     ax = plotter.plot_mesh_collection(col, ax)
 
     past = time()
     now = 0
     for i in range(100000):
-        m.evolve()
+        mesh.evolve()
 
         if i % 1 == 0:
             now = time()
-            print now - past
+            print(now - past)
             past = now
 
-            col = MeshCollection(m.triangles, m.colors)
+            col = FlatMeshCollection(mesh)
             ax = plotter.plot_mesh_collection(col, ax)
 
 

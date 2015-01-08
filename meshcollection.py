@@ -1,6 +1,7 @@
 __author__ = 'zieghailo'
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
+from collections import deque
 
 class MeshCollection(PatchCollection):
 
@@ -15,4 +16,20 @@ class MeshCollection(PatchCollection):
 
         PatchCollection.__init__(self, patches)
         self.set_color(colors)
+        self.set_linewidth(0)
+
+
+class FlatMeshCollection(PatchCollection):
+    """
+    Like MeshCollection, but works with plain numpy arrays instead of Triangle objects
+    """
+    def __init__(self, mesh):
+        patches = deque()
+        colors = deque()
+        for tr in mesh.triangles:
+            patches.append(Polygon(tr.transpose()))
+            colors.append(mesh.get_color(tr))
+
+        PatchCollection.__init__(self, list(patches))
+        self.set_color(list(colors))
         self.set_linewidth(0)
