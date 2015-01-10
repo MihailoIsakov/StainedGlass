@@ -5,30 +5,33 @@ class Point(object):
     maxx = None
     maxy = None
 
-    def __init__(self, x=np.nan, y=np.nan, is_fixed=False):
-        if Point.x is None and Point.y is None:
+    def __init__(self, x=None, y=None, is_fixed=False):
+        if Point.maxx is None and Point.maxy is None:
             raise AttributeError("Point has not set up its borders. Call set_borders on the class Point.")
 
         self._position = np.zeros(2)
-        if not np.isnan(x) and not np.isnan(y):
+        if x is not None and y is not None:
             # if the user wants to set specific values
-            self.x = x
-            self.y = y
+            self._position = np.array([x, y])
         else:
             self._randomize()
 
         self._fixed = is_fixed
-        self._error = np.nan
-        self._direction = {'x': None, 'y': None}
+        self._error = None
         self._least_error = np.inf
-        self._best_position = {x: None, y: None}
+        self._best_position = np.copy(self._position)
         self._randomize_direction()
+
+    def __del__(self):
+        if self._fixed:
+            raise RuntimeError("Fixed points cannot be deleted")
 
     @classmethod
     def set_borders(cls, x, y):
         cls.maxx = x
         cls.maxy = y
 
+    # region setters and getters
     @property
     def x(self):
         return self._position[0]
@@ -56,39 +59,30 @@ class Point(object):
     @error.setter
     def error(self, val):
         self._error = val
+        if val < self._least_error:
+            self._least_error = val
+    # endregion
 
-    def move(self, delta=0.1, epsilon=0.1):
+    def move(self, delta=1, epsilon=0.1, omega=1.05):
         if self._fixed:
             return
 
-        self.x += self._direction['x'] * delta
-        self.x = max(0, min(self.x, self._maxx))
-        self.y += self._direction['y'] * delta
-        self.y = max(0, min(self.y, self._maxy))
+        self._position += self._direction * delta
+        self._position[0] = np.clip(self._position[0], 0, Point.maxx)
+        self._position[1] = np.clip(self._position[1], 0, Point.maxy)
 
-        dx = self._best_position['x'] - self._direction['x']
-        dy = self._best_position['y'] - self._direction['y']
-        n = np.sqrt(dx*dx + dy*dy)
-        dx *= epsilon / n
-        dy *= epsilon / n
+        # change direction to point more towards the best position
+        d = self._best_position - self._position
+        d /= np.linalg.norm(d)
+        self._direction += d * epsilon
+        # TODO possibly normalize it?
 
-        self._direction['x'] += dx
-        self._direction['y'] += dy
-        x = self._direction['x']
-        y = self._direction['y']
-        n = np.sqrt(x*x + y*y)
-        self._direction['x'] / n
-        self._direction['y'] / n
-
-        self._least_error *= 1.1
+        self._least_error *= omega
 
     def _randomize(self):
         self.x = np.random.rand() * Point.maxx
         self.y = np.random.rand() * Point.maxy
 
     def _randomize_direction(self):
-        self._direction = {
-            'x': np.random.rand() * 2 - 1,
-            'y': np.random.rand() * 2 - 1
-        }
-
+        self._direction = np.random.rand(2)
+        self._direction /= np.linalg.norm(self._direction)

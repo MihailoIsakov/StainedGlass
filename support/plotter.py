@@ -32,6 +32,13 @@ def draw_mesh(mesh, ax):
     plt.draw()
     return ax
 
+
+def plot_points(mesh, ax):
+    x = [p.x for p in mesh.points]
+    y = [p.y for p in mesh.points]
+    for p in mesh.points:
+        ax.plot(x, y, 'ro')
+
 def keep_plot_open():
     plt.show()
     plt.waitforbuttonpress(0)

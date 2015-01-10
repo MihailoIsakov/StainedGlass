@@ -2,7 +2,8 @@ __author__ = 'zieghailo'
 
 import numpy as np
 from collections import namedtuple
-from support import lru_cache
+from warnings import simplefilter
+
 
 
 Rect = namedtuple('Rect', ['north', 'south', 'east', 'west'])
@@ -96,6 +97,7 @@ def _get_borders(tr):
     borders = np.zeros([rect.north - rect.south + 1, 2])
     for y in range(rect.south, rect.north + 1):
         sol = _y_intersects(y, tr)
+        simplefilter('ignore', RuntimeWarning)
         sol = sol[rect.west <= sol]
         sol = sol[sol <= rect.east]
 
@@ -149,10 +151,11 @@ def rand_point_in_triangle(tr):
     AB = B - A
     AC = C - A
 
-    k = 1; s = 1
-    while k + s > 1:
+    while True:
         k = np.random.rand()
         s = np.random.rand()
+        if k + s <= 1:
+            break
 
     point = A + AB * k + AC * s
     return point

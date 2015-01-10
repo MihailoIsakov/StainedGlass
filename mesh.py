@@ -2,15 +2,14 @@
 
 __author__ = 'zieghailo'
 import numpy as np
-from time import time
 from collections import deque
 
 from matplotlib.tri import Triangulation
 
 from point import Point
-from meshcollection import FlatMeshCollection
-from trimath import triangle_sum
+from trimath import triangle_sum, rand_point_in_triangle
 from support.lru_cache import LRUCache
+
 
 
 # region needed so that @profile doesn't cause an error
@@ -102,26 +101,15 @@ class Mesh(object):
         :param triangle: 3x2 numpy array, each collumn is a
         :return: the created point
         """
-        p1 = triangle[:, 0]
-        p2 = triangle[:, 1]
-        p3 = triangle[:, 2]
-        p2 = p2 - p1
-        p3 = p3 - p1
+        [x, y] = rand_point_in_triangle(triangle)
 
-        while True:
-            s = np.random.rand()
-            t = np.random.rand()
-            if s + t <= 1:
-                break
-
-        new_point = p1 + p2 * s + p3 * t
-        point = Point(x=new_point[0], y=new_point[1])
+        point = Point(x, y)
         self.add_point(point)
         return point
 
     def update_errors(self):
         for p in self.points:
-            p.error = 0
+            p.error = np.inf
         for i, tr_index in enumerate(self._triangulation.triangles):
             err = self.get_result_at(i)[1]
             for p_i in tr_index:
@@ -170,6 +158,7 @@ class Mesh(object):
             result = None
         return result
 
+    @profile
     def delaunay(self):
         """
         Triangulate the current points,
@@ -198,7 +187,11 @@ class Mesh(object):
             self._triangles.append(triangle)
             self.process_triangle(triangle)
 
+    @profile
     def evolve(self, maxerr = 2000, minerr=500):
+        for p in self.points:
+            p.move()
+
         for p in self.points:
             if p.error < minerr:
                 self.remove_point(p)
@@ -211,6 +204,7 @@ class Mesh(object):
         self.colorize_stack(parallel=False)
         self.update_errors()
 
+    @profile
     def colorize_stack(self, parallel=False):
         if not parallel:
             while len(self._triangle_stack) > 0:
@@ -243,51 +237,6 @@ class Mesh(object):
                 cons = False
 
         return cons
-
-def main():
-    from support import plotter
-
-    print("Running mesh.py")
-
-    global mesh
-    import cv2
-    img = cv2.imread('images/lion.jpg')
-    img = np.flipud(img)
-
-    mesh = Mesh(img, 1000)
-
-    print "Triangulating."
-    mesh.delaunay()
-    print "Coloring."
-    mesh.colorize_stack()
-    mesh.update_errors()
-
-    col = FlatMeshCollection(mesh)
-    ax = plotter.start()
-    ax = plotter.plot_mesh_collection(col, ax)
-
-    print mesh.is_consistent()
-    past = time()
-    now = 0
-    for i in range(100000):
-        if not mesh.is_consistent():
-            pass
-        mesh.evolve()
-
-        if i % 1 == 0:
-            now = time()
-            print(now - past)
-            past = now
-
-            col = FlatMeshCollection(mesh)
-            ax = plotter.plot_mesh_collection(col, ax)
-
-
-    plotter.keep_plot_open()
-
-if __name__ == "__main__":
-    main()
-
 
 
 
