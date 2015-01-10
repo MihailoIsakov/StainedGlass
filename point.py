@@ -2,25 +2,32 @@ __author__ = 'zieghailo'
 import numpy as np
 
 class Point(object):
+    maxx = None
+    maxy = None
 
-    def __init__(self, max_x, max_y, x=np.nan, y=np.nan):
+    def __init__(self, x=np.nan, y=np.nan, is_fixed=False):
+        if Point.x is None and Point.y is None:
+            raise AttributeError("Point has not set up its borders. Call set_borders on the class Point.")
+
         self._position = np.zeros(2)
-        if max_x is not None and max_y is not None:
-            # the user wants to create a random point
-            self._randomize(max_x, max_y)
-            self._maxx = max_x
-            self._maxy = max_y
-        elif not np.isnan(x) and not np.isnan(y):
+        if not np.isnan(x) and not np.isnan(y):
             # if the user wants to set specific values
             self.x = x
             self.y = y
+        else:
+            self._randomize()
 
-        self._triangles = set([])
+        self._fixed = is_fixed
         self._error = np.nan
         self._direction = {'x': None, 'y': None}
         self._least_error = np.inf
         self._best_position = {x: None, y: None}
         self._randomize_direction()
+
+    @classmethod
+    def set_borders(cls, x, y):
+        cls.maxx = x
+        cls.maxy = y
 
     @property
     def x(self):
@@ -43,39 +50,17 @@ class Point(object):
         return self._position
 
     @property
-    def triangles(self):
-        return self._triangles
-
-    @property
     def error(self):
-        # self._calc_error()
         return self._error
 
-    def _calc_error(self):
-        error = 0
-        for t in self._triangles:
-            try:
-                error += t.error
-            except TypeError:
-                pass
-        self._error = error
-        if error < self._least_error:
-            self._least_error = error
-            self._best_position = {'x': self.x, 'y': self.y}
-
-    def add_triangle(self, triangle):
-        self._triangles.add(triangle)
-        self._calc_error()
-
-    def remove_triangle(self, triangle):
-        try:
-            self._triangles.discard(triangle)
-        except KeyError:
-            print("KeyError: attempted to remove a triangle not in set")
-        self._calc_error()
+    @error.setter
+    def error(self, val):
+        self._error = val
 
     def move(self, delta=0.1, epsilon=0.1):
-        print self._direction
+        if self._fixed:
+            return
+
         self.x += self._direction['x'] * delta
         self.x = max(0, min(self.x, self._maxx))
         self.y += self._direction['y'] * delta
@@ -97,9 +82,9 @@ class Point(object):
 
         self._least_error *= 1.1
 
-    def _randomize(self, maxx, maxy):
-        self.x = np.random.rand() * maxx
-        self.y = np.random.rand() * maxy
+    def _randomize(self):
+        self.x = np.random.rand() * Point.maxx
+        self.y = np.random.rand() * Point.maxy
 
     def _randomize_direction(self):
         self._direction = {

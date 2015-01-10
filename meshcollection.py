@@ -28,7 +28,10 @@ class FlatMeshCollection(PatchCollection):
         colors = deque()
         for tr in mesh.triangles:
             patches.append(Polygon(tr.transpose()))
-            colors.append(mesh.get_color(tr))
+            try:
+                colors.append(mesh.get_result(tr)[0])
+            except KeyError:
+                colors.append((0,1,0))
 
         PatchCollection.__init__(self, list(patches))
         self.set_color(list(colors))

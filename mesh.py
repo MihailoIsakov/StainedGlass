@@ -2,17 +2,16 @@
 
 __author__ = 'zieghailo'
 import numpy as np
-from matplotlib.tri import Triangulation
-from multiprocessing import Pool
-import functools
 from time import time
 from collections import deque
+
+from matplotlib.tri import Triangulation
 
 from point import Point
 from meshcollection import FlatMeshCollection
 from trimath import triangle_sum
 from support.lru_cache import LRUCache
-from support.numpy_hash import hashable
+
 
 # region needed so that @profile doesn't cause an error
 import __builtin__
@@ -31,13 +30,16 @@ class Mesh(object):
     def __init__(self, img, n):
         self.N = n
         self._img = img
+        Point.set_borders(img.shape[1], img.shape[0]) # for some reason shape gives us y, then x
+
 
         # TODO maybe implement it as a linked list so that removing points from the middle and appending is faster?
         self._points = []
         self._triangles = deque()
 
         self._triangle_stack = deque()
-        self._triangle_cache = LRUCache(8192)
+        self._CACHE_SIZE = 65536
+        self._triangle_cache = LRUCache(self._CACHE_SIZE)
 
         self._triangulation = None
         self._randomize()
@@ -47,12 +49,12 @@ class Mesh(object):
         h, w = self.image.shape[:2]
 
         for i in range(self.N - 4):
-            self.points.append(Point(w, h))
+            self.points.append(Point())
 
-        self.points.append(Point(w, h, x=0, y=0))
-        self.points.append(Point(w, h, x=w, y=0))
-        self.points.append(Point(w, h, x=0, y=h))
-        self.points.append(Point(w, h, x=w, y=h))
+        self.points.append(Point(0, 0, is_fixed=True))
+        self.points.append(Point(w, 0, is_fixed=True))
+        self.points.append(Point(0, h, is_fixed=True))
+        self.points.append(Point(w, h, is_fixed=True))
 
     # region properties
     @property
@@ -100,9 +102,9 @@ class Mesh(object):
         :param triangle: 3x2 numpy array, each collumn is a
         :return: the created point
         """
-        p1 = triangle.flat_vertices[:, 0]
-        p2 = triangle.flat_vertices[:, 1]
-        p3 = triangle.flat_vertices[:, 2]
+        p1 = triangle[:, 0]
+        p2 = triangle[:, 1]
+        p3 = triangle[:, 2]
         p2 = p2 - p1
         p3 = p3 - p1
 
@@ -129,11 +131,12 @@ class Mesh(object):
         triangle[:, 2] = self.points[point_indices[2]].position
         return triangle
 
-    def get_color(self, triangle):
-        result = self.process_triangle(triangle)
-        if result is None:
+    def get_result(self, triangle):
+        try:
+            result = self._triangle_cache.get(triangle)
+        except KeyError:
             raise KeyError("The triangle was not previously colorized.")
-        return result[0]
+        return result
 
     def process_triangle(self, triangle):
         """
@@ -142,9 +145,8 @@ class Mesh(object):
         :param triangle: 2x3 numpy array of the triangles coordinates.
         :return: color and error tuple if the result was calculated before, otherwise None.
         """
-        hashed = hashable(triangle)
         try:
-            result = self._triangle_cache.get(hashed)
+            result = self._triangle_cache.get(triangle)
         except KeyError:
             self._triangle_stack.append(triangle)
             result = None
@@ -152,7 +154,9 @@ class Mesh(object):
 
     def delaunay(self):
         """
-        Triangulate the current points, salvage results from the cache,
+        Triangulate the current points,
+        add the triangle numpy arrays to self.triangles,
+        salvage results from the cache,
         add missing results to the stack.
         """
         x = np.array([p.x for p in self.points])
@@ -164,9 +168,11 @@ class Mesh(object):
                 self._triangulation = Triangulation(x, y)
             except Exception:
                 print("Triangulation failed, repeating.")
-                print x
                 continue
             break
+
+        if len(self._triangulation.triangles) > self._CACHE_SIZE:
+            raise MemoryError("Cache is not smaller than the number of triangles in the mesh.")
 
         # goes through the triangles and sifts the new ones out, throws them on the stack
         for i, t in enumerate(self._triangulation.triangles):
@@ -174,20 +180,11 @@ class Mesh(object):
             self._triangles.append(triangle)
             self.process_triangle(triangle)
 
-    def evolve(self, maxerr = 1000, minerr=1000):
-        # TODO somethings really fishy here
-        for p in self.points:
-            if p.error < minerr:
-                self.remove_point(p)
-
-        self.delaunay()
-        self.colorize_stack(parallel=False)
-        #
-        # for tr in self.triangles:
-        #     if tr.error > maxerr:
-        #         self.split_triangle(tr)
-        # for p in self.points:
-        #     p.move(delta=1)
+    def evolve(self, maxerr = 10000, minerr=1000):
+        for tr in self.triangles:
+            res = self.get_result(tr)
+            if res[1] > maxerr:
+                self.split_triangle(tr)
 
         self.delaunay()
         self.colorize_stack(parallel=False)
@@ -197,7 +194,9 @@ class Mesh(object):
             while len(self._triangle_stack) > 0:
                 triangle = self._triangle_stack.pop()
                 result = triangle_sum(self.image, triangle)
-                self._triangle_cache.set(hashable(triangle), result)
+                self._triangle_cache.set(triangle, result)
+            if len(self._triangle_stack) != 0:
+                raise AssertionError("Stack not fully colored")
         else:
             raise NotImplementedError
             # f = functools.partial(triangle_sum, self.image)
@@ -213,7 +212,19 @@ class Mesh(object):
             #     self._triangle_stack[i]._color = result[i][0]
             #     self._triangle_stack[i]._error = result[i][1]
 
+    def is_consistent(self):
+        cons = True
+        for tr in self.triangles:
+            try:
+                res = self._triangle_cache.get(tr)
+            except KeyError:
+                cons = False
+
+        return cons
+
 def main():
+    from support import plotter
+
     print("Running mesh.py")
 
     global mesh
@@ -224,17 +235,21 @@ def main():
     mesh = Mesh(img, 1000)
     print "Triangulating."
     mesh.delaunay()
+    print mesh.is_consistent()
     print "Coloring."
     mesh.colorize_stack()
+    print mesh.is_consistent()
 
-    import plotter
     col = FlatMeshCollection(mesh)
     ax = plotter.start()
     ax = plotter.plot_mesh_collection(col, ax)
 
+    print mesh.is_consistent()
     past = time()
     now = 0
     for i in range(100000):
+        if not mesh.is_consistent():
+            pass
         mesh.evolve()
 
         if i % 1 == 0:
