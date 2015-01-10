@@ -70,7 +70,7 @@ class Mesh(object):
         return self._triangles
 
     @property
-    def error(self):
+    def triangulation_error(self):
         return sum(tr.error for tr in self.triangles)
 
     @property
@@ -119,6 +119,14 @@ class Mesh(object):
         self.add_point(point)
         return point
 
+    def update_errors(self):
+        for p in self.points:
+            p.error = 0
+        for i, tr_index in enumerate(self._triangulation.triangles):
+            err = self.get_result_at(i)[1]
+            for p_i in tr_index:
+                self.points[p_i].error += err
+
     def get_triangle(self, point_indices):
         """
         Gets the coordinates of the triangle from indices of three points in self.points
@@ -137,6 +145,16 @@ class Mesh(object):
         except KeyError:
             raise KeyError("The triangle was not previously colorized.")
         return result
+
+    def get_result_at(self, triangle_index):
+        triangle = self.triangles[triangle_index]
+        return self.get_result(triangle)
+
+    def get_triangle_color(self, triangle):
+        return self.get_result(triangle)[0]
+
+    def get_triangle_error(self, triangle):
+        return self.get_result(triangle)[1]
 
     def process_triangle(self, triangle):
         """
@@ -180,14 +198,18 @@ class Mesh(object):
             self._triangles.append(triangle)
             self.process_triangle(triangle)
 
-    def evolve(self, maxerr = 10000, minerr=1000):
+    def evolve(self, maxerr = 2000, minerr=500):
+        for p in self.points:
+            if p.error < minerr:
+                self.remove_point(p)
+
         for tr in self.triangles:
-            res = self.get_result(tr)
-            if res[1] > maxerr:
+            if self.get_triangle_error(tr) > maxerr:
                 self.split_triangle(tr)
 
         self.delaunay()
         self.colorize_stack(parallel=False)
+        self.update_errors()
 
     def colorize_stack(self, parallel=False):
         if not parallel:
@@ -233,12 +255,12 @@ def main():
     img = np.flipud(img)
 
     mesh = Mesh(img, 1000)
+
     print "Triangulating."
     mesh.delaunay()
-    print mesh.is_consistent()
     print "Coloring."
     mesh.colorize_stack()
-    print mesh.is_consistent()
+    mesh.update_errors()
 
     col = FlatMeshCollection(mesh)
     ax = plotter.start()
