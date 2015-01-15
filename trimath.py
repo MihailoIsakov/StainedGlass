@@ -3,10 +3,25 @@ __author__ = 'zieghailo'
 import numpy as np
 from collections import namedtuple
 from warnings import simplefilter
-
+from scipy.spatial.qhull import Delaunay
 
 
 Rect = namedtuple('Rect', ['north', 'south', 'east', 'west'])
+
+
+def DelaunayXY(x, y):
+    global p
+    x = x.reshape(1, x.size)
+    y = y.reshape(1, y.size)
+
+    p = np.concatenate((x, y))
+    p = p.transpose()
+
+    try:
+        d = Delaunay(p)
+    except Exception:
+        pass
+    return d
 
 
 def in_triangle(point, triangle):

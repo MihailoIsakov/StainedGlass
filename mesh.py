@@ -4,10 +4,9 @@ __author__ = 'zieghailo'
 import numpy as np
 from collections import deque
 
-from matplotlib.tri import Triangulation
 
 from point import Point
-from trimath import triangle_sum, rand_point_in_triangle
+from trimath import triangle_sum, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
 
@@ -32,7 +31,8 @@ class Mesh(object):
         Point.set_borders(img.shape[1], img.shape[0]) # for some reason shape gives us y, then x
 
 
-        # TODO maybe implement it as a linked list so that removing points from the middle and appending is faster?
+        # TODO maybe implement it as a linked list so that
+        # removing points from the middle and appending is faster?
         self._points = []
         self._triangles = deque()
 
@@ -87,10 +87,8 @@ class Mesh(object):
     #endregion
 
     def remove_point(self, point):
-        self.points.remove(point)
-
-    def remove_point_at(self, index):
-        self.points.pop(index)
+        if not point._fixed:
+            self.points.remove(point)
 
     def add_point(self, new_point):
         self.points.append(new_point)
@@ -109,8 +107,8 @@ class Mesh(object):
 
     def update_errors(self):
         for p in self.points:
-            p.error = np.inf
-        for i, tr_index in enumerate(self._triangulation.triangles):
+            p.error = 0
+        for i, tr_index in enumerate(self._triangulation.simplices):
             err = self.get_result_at(i)[1]
             for p_i in tr_index:
                 self.points[p_i].error += err
@@ -131,6 +129,7 @@ class Mesh(object):
         try:
             result = self._triangle_cache.get(triangle)
         except KeyError:
+            return ((0, 1, 0), 0)
             raise KeyError("The triangle was not previously colorized.")
         return result
 
@@ -170,25 +169,23 @@ class Mesh(object):
         y = np.array([p.y for p in self.points])
         self._triangles = deque()
 
-        while True:
-            try:
-                self._triangulation = Triangulation(x, y)
-            except Exception:
-                print("Triangulation failed, repeating.")
-                continue
-            break
+        try:
+            self._triangulation = DelaunayXY(x, y)
+        except Exception:
+            pass
 
-        if len(self._triangulation.triangles) > self._CACHE_SIZE:
+        if len(self._triangulation.simplices) > self._CACHE_SIZE:
             raise MemoryError("Cache is not smaller than the number of triangles in the mesh.")
 
         # goes through the triangles and sifts the new ones out, throws them on the stack
-        for i, t in enumerate(self._triangulation.triangles):
+        for i, t in enumerate(self._triangulation.simplices):
             triangle = self.get_triangle(t)
             self._triangles.append(triangle)
             self.process_triangle(triangle)
 
     @profile
     def evolve(self, maxerr = 2000, minerr=500):
+        self.update_errors()
         for p in self.points:
             p.move()
 
@@ -202,7 +199,6 @@ class Mesh(object):
 
         self.delaunay()
         self.colorize_stack(parallel=False)
-        self.update_errors()
 
     @profile
     def colorize_stack(self, parallel=False):

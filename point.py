@@ -1,5 +1,6 @@
 __author__ = 'zieghailo'
 import numpy as np
+from collections import deque
 
 class Point(object):
     maxx = None
@@ -21,6 +22,8 @@ class Point(object):
         self._least_error = np.inf
         self._best_position = np.copy(self._position)
         self._randomize_direction()
+
+        self.past_positions = deque()
 
     def __del__(self):
         if self._fixed:
@@ -63,7 +66,7 @@ class Point(object):
             self._least_error = val
     # endregion
 
-    def move(self, delta=1, epsilon=0.1, omega=1.05):
+    def move(self, delta=2, epsilon=0.5, omega=1.05):
         if self._fixed:
             return
 
@@ -74,7 +77,8 @@ class Point(object):
         # change direction to point more towards the best position
         d = self._best_position - self._position
         d /= np.linalg.norm(d)
-        self._direction += d * epsilon
+        if not np.isnan(d).any():
+            self._direction += d * epsilon
         # TODO possibly normalize it?
 
         self._least_error *= omega
@@ -84,5 +88,9 @@ class Point(object):
         self.y = np.random.rand() * Point.maxy
 
     def _randomize_direction(self):
-        self._direction = np.random.rand(2)
-        self._direction /= np.linalg.norm(self._direction)
+        self._direction = np.random.rand(2) * 2 - 1
+        norm = np.linalg.norm(self._direction)
+        if norm != 0:
+            self._direction /= np.linalg.norm(self._direction)
+        else:
+            self._randomize_direction()
