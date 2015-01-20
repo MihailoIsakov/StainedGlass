@@ -4,8 +4,8 @@ __author__ = 'zieghailo'
 import numpy as np
 from collections import deque
 
-
 from point import Point
+from PSOpoint import PSOPoint
 from trimath import triangle_sum, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
@@ -30,7 +30,6 @@ class Mesh(object):
         self._img = img
         Point.set_borders(img.shape[1], img.shape[0]) # for some reason shape gives us y, then x
 
-
         # TODO maybe implement it as a linked list so that
         # removing points from the middle and appending is faster?
         self._points = []
@@ -48,12 +47,12 @@ class Mesh(object):
         h, w = self.image.shape[:2]
 
         for i in range(self.N - 4):
-            self.points.append(Point())
+            self.points.append(PSOPoint())
 
-        self.points.append(Point(0, 0, is_fixed=True))
-        self.points.append(Point(w, 0, is_fixed=True))
-        self.points.append(Point(0, h, is_fixed=True))
-        self.points.append(Point(w, h, is_fixed=True))
+        self.points.append(PSOPoint(0, 0, is_fixed=True))
+        self.points.append(PSOPoint(w, 0, is_fixed=True))
+        self.points.append(PSOPoint(0, h, is_fixed=True))
+        self.points.append(PSOPoint(w, h, is_fixed=True))
 
     # region properties
     @property
@@ -101,7 +100,7 @@ class Mesh(object):
         """
         [x, y] = rand_point_in_triangle(triangle)
 
-        point = Point(x, y)
+        point = PSOPoint(x, y)
         self.add_point(point)
         return point
 
