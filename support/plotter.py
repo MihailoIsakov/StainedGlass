@@ -2,53 +2,56 @@ __author__ = 'zieghailo'
 
 import matplotlib.pyplot as plt
 
+imagePlot = None
 
-def start(size = (20,10)):
+
+def start(size=(20, 10)):
+    global imagePlot
     fig = plt.figure(figsize = size)
-    ax = fig.add_subplot(111)
+    imagePlot = fig.add_subplot(111)
     fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
     plt.ion()
     plt.show()
-    return ax
 
 
-def plot_mesh_collection(collection, ax):
+def plot_mesh_collection(collection):
     # ax.clear()
-    ax.add_collection(collection)
-    ax.autoscale_view()
-    ax.axis('equal')
+    imagePlot.add_collection(collection)
+    imagePlot.autoscale_view()
+    imagePlot.axis('equal')
     plt.draw()
-    return ax
 
 
-def draw_mesh(mesh, ax):
+def draw_mesh(mesh):
+    global imagePlot
     mesh.build_collection()
     pcol = mesh.collection
     pcol.set_linewidth(0)
     pcol.set_color(mesh.colors)
-    ax.add_collection(pcol)
-    ax.autoscale_view()
-    ax.axis('equal')
+    imagePlot.add_collection(pcol)
+    imagePlot.autoscale_view()
+    imagePlot.axis('equal')
     plt.draw()
-    return ax
+    return imagePlot
 
 oldx = None
 oldy = None
-def plot_points(mesh, ax):
-    global oldx, oldy
+def plot_points(mesh):
+    global oldx, oldy, imagePlot
     x = [p.x for p in mesh.points]
     y = [p.y for p in mesh.points]
-    ax.clear()
+    imagePlot.clear()
     for p in mesh.points:
-        ax.plot(x, y, 'ro')
+        imagePlot.plot(x, y, 'ro')
     if (oldx is not None):
-        ax.plot(oldx, oldy, 'bo')
+        imagePlot.plot(oldx, oldy, 'bo')
     oldx = x
     oldy = y
 
 
-def plot_arrow(mesh, ax):
-    ax.clear()
+def plot_arrow(mesh):
+    global imagePlot
+    imagePlot.clear()
     STACK_SIZE = 10
     for p in mesh.points:
         p.past_positions.append([p.x, p.y])
@@ -58,8 +61,8 @@ def plot_arrow(mesh, ax):
         if len(p.past_positions) > 2:
             pos = p.past_positions
             for i in range(min(STACK_SIZE - 1, len(p.past_positions) -1)):
-                c = 1.0/(i+1.0)
-                ax.arrow(pos[i][0], pos[i][1],
+                c = i * 1.0 / STACK_SIZE
+                imagePlot.arrow(pos[i][0], pos[i][1],
                          pos[i+1][0] - pos[i][0], pos[i+1][1] - pos[i][1],
                          head_width=0.5, head_length=0.5, fc=(c,c,c), ec=(c,c,c))
 

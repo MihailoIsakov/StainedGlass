@@ -66,7 +66,9 @@ class Point(object):
             self._least_error = val
     # endregion
 
-    def move(self, delta=2, epsilon=0.5, omega=1.05):
+    def move(self, delta=2, epsilon=1, omega=1.05):
+        # the point are practically moving in one dimension
+        # they need data in which way to turn. :/ fuck
         if self._fixed:
             return
 

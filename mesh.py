@@ -157,7 +157,6 @@ class Mesh(object):
             result = None
         return result
 
-    @profile
     def delaunay(self):
         """
         Triangulate the current points,

@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 __author__ = 'zieghailo'
 
 from mesh import Mesh
@@ -24,8 +26,8 @@ def main():
     mesh.update_errors()
 
     col = FlatMeshCollection(mesh)
-    ax = plotter.start()
-    ax = plotter.plot_mesh_collection(col, ax)
+    plotter.start()
+    plotter.plot_mesh_collection(col)
 
     past = time()
     now = 0
@@ -36,9 +38,9 @@ def main():
         print(now - past)
         past = now
         col = FlatMeshCollection(mesh)
-        ax = plotter.plot_mesh_collection(col, ax)
-        plotter.plot_points(mesh, ax)
-        plotter.plot_arrow(mesh, ax)
+        plotter.plot_mesh_collection(col)
+        plotter.plot_points(mesh)
+        plotter.plot_arrow(mesh)
 
     plotter.keep_plot_open()
 

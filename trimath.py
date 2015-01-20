@@ -9,6 +9,18 @@ from scipy.spatial.qhull import Delaunay
 Rect = namedtuple('Rect', ['north', 'south', 'east', 'west'])
 
 
+# region needed so that @profile doesn't cause an error
+import __builtin__
+
+try:
+    __builtin__.profile
+except AttributeError:
+    # No line profiler, provide a pass-through version
+    def profile(func): return func
+    __builtin__.profile = profile
+# endregion
+
+
 def DelaunayXY(x, y):
     global p
     x = x.reshape(1, x.size)
@@ -66,6 +78,7 @@ def _y_intersects(y, tr):
         return np.array([xab, xac, xbc])
 
 
+@profile
 def triangle_sum(img, tr):
     """
     Returns the average RGB value for the pixels in the triangle tr,
@@ -105,14 +118,14 @@ def _get_rect(tr):
     _west  = np.floor(np.amin(tr[0])).astype(int)
     return Rect(_north, _south, _east, _west)
 
-
+@profile
 def _get_borders(tr):
     rect = _get_rect(tr)
 
     borders = np.zeros([rect.north - rect.south + 1, 2])
     for y in range(rect.south, rect.north + 1):
         sol = _y_intersects(y, tr)
-        simplefilter('ignore', RuntimeWarning)
+        # simplefilter('ignore', RuntimeWarning)
         sol = sol[rect.west <= sol]
         sol = sol[sol <= rect.east]
 
@@ -125,7 +138,7 @@ def _get_borders(tr):
 
     return borders
 
-
+@profile
 def _sum_row_error(img, color, y, bounds):
     left = bounds[0]
     right = bounds[1]
@@ -136,7 +149,7 @@ def _sum_row_error(img, color, y, bounds):
 
     return error
 
-
+@profile
 def _sum_row(img, y, bounds):
     """
     Sums the pixels at y height betwwen the borders
