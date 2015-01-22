@@ -1,8 +1,8 @@
 __author__ = 'zieghailo'
 
 import numpy as np
+from cv2 import fillConvexPoly
 from collections import namedtuple
-from warnings import simplefilter
 from scipy.spatial.qhull import Delaunay
 
 
@@ -187,3 +187,77 @@ def rand_point_in_triangle(tr):
 
     point = A + AB * k + AC * s
     return point
+
+
+def cv2_triangle_sum(img, tr):
+    """
+    Creates a binary mask of pixels inside the triangle,
+    and multiplies it with the image.
+    It then calculates the sum of the whole matrix.
+    :param img: The minimal image containing the triangle, defined by _get_rect
+    :param tr:  The global triangle coordinates, 2x3 numpy array
+    :return: The color, error_sum, and number of pixels
+    """
+
+    cutout = _image_cutout(img, tr)
+    reltr = _relative_triangle(tr)
+    trnorm = tr.round().astype(int).transpose()
+
+    mask = _make_mask(cutout, trnorm)
+    pixnum = _sum_matrix(mask)
+
+    red   = _sum_matrix(cutout[:, :, 0] * mask) / pixnum
+    green = _sum_matrix(cutout[:, :, 1] * mask) / pixnum
+    blue  = _sum_matrix(cutout[:, :, 2] * mask) / pixnum
+
+    color = (red, green, blue)
+
+    # Get the difference between the color and the error
+    cutout[:, :, 0] -= red
+    cutout[:, :, 1] -= green
+    cutout[:, :, 2] -= blue
+    cutout = np.abs(cutout)
+
+    red_error   = _sum_matrix(cutout[:, :, 0] * mask)
+    green_error = _sum_matrix(cutout[:, :, 1] * mask)
+    blue_error  = _sum_matrix(cutout[:, :, 2] * mask)
+    error = red_error + green_error + blue_error
+
+    return color, error, pixnum
+
+
+def _sum_matrix(mat):
+    return np.sum(np.sum(mat))
+
+
+def _make_mask(cutout, rel_tri):
+    mask = np.zeros([cutout.shape[0], cutout.shape[1]])
+    fillConvexPoly(mask, rel_tri, 1)
+    return mask
+
+
+def _image_cutout(img, tr):
+    rect = _get_rect(tr)
+    cutout = img[rect.south:rect.north, rect.west:rect.east]
+    return cutout
+
+
+def _relative_triangle(tr):
+    rect = _get_rect(tr)
+    newtr = np.copy(tr)
+
+    newtr[0] -= rect.west
+    newtr[1] -= rect.south
+
+    return newtr
+
+
+if __name__ == "__main__":
+    import cv2
+    img = cv2.imread('images/lion.jpg')
+
+    import numpy as np
+    tr = np.array([[100, 200, 300], [300, 100, 200]])
+
+    res = cv2_triangle_sum(img, tr)
+    print res
