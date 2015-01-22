@@ -201,16 +201,14 @@ def cv2_triangle_sum(img, tr):
 
     cutout = _image_cutout(img, tr)
     reltr = _relative_triangle(tr)
-    trnorm = tr.round().astype(int).transpose()
+    trnorm = reltr.round().astype(int).transpose()
 
     mask = _make_mask(cutout, trnorm)
-    pixnum = _sum_matrix(mask)
+    pixnum = np.sum(mask)
 
-    red   = _sum_matrix(cutout[:, :, 0] * mask) / pixnum
-    green = _sum_matrix(cutout[:, :, 1] * mask) / pixnum
-    blue  = _sum_matrix(cutout[:, :, 2] * mask) / pixnum
-
-    color = (red, green, blue)
+    red   = np.sum(cutout[:, :, 0] * mask) / pixnum
+    green = np.sum(cutout[:, :, 1] * mask) / pixnum
+    blue  = np.sum(cutout[:, :, 2] * mask) / pixnum
 
     # Get the difference between the color and the error
     cutout[:, :, 0] -= red
@@ -218,16 +216,13 @@ def cv2_triangle_sum(img, tr):
     cutout[:, :, 2] -= blue
     cutout = np.abs(cutout)
 
-    red_error   = _sum_matrix(cutout[:, :, 0] * mask)
-    green_error = _sum_matrix(cutout[:, :, 1] * mask)
-    blue_error  = _sum_matrix(cutout[:, :, 2] * mask)
+    red_error   = np.sum(cutout[:, :, 0] * mask)
+    green_error = np.sum(cutout[:, :, 1] * mask)
+    blue_error  = np.sum(cutout[:, :, 2] * mask)
     error = red_error + green_error + blue_error
 
+    color = (red / 255.0, green / 255.0, blue / 255.0)
     return color, error, pixnum
-
-
-def _sum_matrix(mat):
-    return np.sum(np.sum(mat))
 
 
 def _make_mask(cutout, rel_tri):
@@ -254,10 +249,16 @@ def _relative_triangle(tr):
 
 if __name__ == "__main__":
     import cv2
-    img = cv2.imread('images/lion.jpg')
+    img1 = cv2.imread('images/lion.jpg')
+    img2 = np.copy(img1)
 
     import numpy as np
     tr = np.array([[100, 200, 300], [300, 100, 200]])
 
-    res = cv2_triangle_sum(img, tr)
-    print res
+    print "cv2 triangle sum: "
+    res1 = cv2_triangle_sum(img1, tr)
+    print res1
+
+    print "old triangle sum"
+    res2 = triangle_sum(img2, tr)
+    print res2

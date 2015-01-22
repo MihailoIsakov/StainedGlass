@@ -70,3 +70,8 @@ def plot_arrow(mesh):
 def keep_plot_open():
     plt.show()
     plt.waitforbuttonpress(0)
+
+
+def plot_matrix(mat):
+    plt.matshow(mat)
+    plt.show()
