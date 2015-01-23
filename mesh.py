@@ -69,21 +69,18 @@ class Mesh(object):
         return self._triangles
 
     @property
-    def triangulation_error(self):
-        return sum(tr.error for tr in self.triangles)
-
-    @property
     def colors(self):
         # TODO can be optimized to check if the current version is still consistent
         return [t.color for t in self.triangles]
 
     @property
-    def triangle_errors(self):
-        return [t.error for t in self.triangles]
-
-    @property
     def point_errors(self):
         return [p.error for p in self.points]
+
+    @property
+    def error(self):
+        err = np.sum(self.get_triangle_error(tr) for tr in self.triangles)
+        return err
     #endregion
 
     def remove_point(self, point):

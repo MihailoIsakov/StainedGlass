@@ -1,14 +1,17 @@
 __author__ = 'zieghailo'
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 imagePlot = None
-
+errorPlot = None
 
 def start(size=(20, 10)):
-    global imagePlot
-    fig = plt.figure(figsize = size)
+    global imagePlot, errorPlot
+    fig = plt.figure(1, figsize = size)
     imagePlot = fig.add_subplot(111)
+    errorPlot = plt.figure(2).add_subplot(111)
+
     fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
     plt.ion()
     plt.show()
@@ -19,6 +22,7 @@ def plot_mesh_collection(collection):
     imagePlot.add_collection(collection)
     imagePlot.autoscale_view()
     imagePlot.axis('equal')
+    plt.figure(1)
     plt.draw()
 
 
@@ -65,6 +69,15 @@ def plot_arrow(mesh):
                 imagePlot.arrow(pos[i][0], pos[i][1],
                          pos[i+1][0] - pos[i][0], pos[i+1][1] - pos[i][1],
                          head_width=0.5, head_length=0.5, fc=(c,c,c), ec=(c,c,c))
+
+
+errors = []
+def plot_global_errors(error):
+    global errorPlot, errors
+    errors.append(error)
+    errorPlot.plot(errors, 'r')
+    plt.figure(2)
+    plt.draw()
 
 
 def keep_plot_open():

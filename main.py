@@ -42,8 +42,9 @@ def main():
         if (cnt % 1 == 0):
             col = FlatMeshCollection(mesh)
             plotter.plot_mesh_collection(col)
-        # plotter.plot_points(mesh)
-        # plotter.plot_arrow(mesh)
+            plotter.plot_global_errors(mesh.error)
+            # plotter.plot_points(mesh)
+            # plotter.plot_arrow(mesh)
 
     plotter.keep_plot_open()
 
