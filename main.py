@@ -31,14 +31,17 @@ def main():
 
     past = time()
     now = 0
+    cnt = 0
     while True:
+        cnt += 1
         mesh.evolve(maxerr=20000, minerr=50000)
 
         now = time()
         print(now - past)
         past = now
-        col = FlatMeshCollection(mesh)
-        plotter.plot_mesh_collection(col)
+        if (cnt % 1 == 0):
+            col = FlatMeshCollection(mesh)
+            plotter.plot_mesh_collection(col)
         # plotter.plot_points(mesh)
         # plotter.plot_arrow(mesh)
 

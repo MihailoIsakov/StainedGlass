@@ -79,7 +79,6 @@ def _y_intersects(y, tr):
         return np.array([xab, xac, xbc])
 
 
-@profile
 def triangle_sum(img, tr):
     # return barymetric_triangle_sum(img, tr)
     res = cv2_triangle_sum(img, tr)
@@ -126,7 +125,6 @@ def _get_rect(tr):
     return Rect(_north, _south, _east, _west)
 
 
-@profile
 def _sum_row_error(img, color, y, bounds):
     left = bounds[0]
     right = bounds[1]
@@ -138,7 +136,6 @@ def _sum_row_error(img, color, y, bounds):
     return error
 
 
-@profile
 def _sum_row(img, y, bounds):
     """
     Sums the pixels at y height betwwen the borders
@@ -162,6 +159,7 @@ def _sum_row(img, y, bounds):
 
 #endregion
 
+
 def rand_point_in_triangle(tr):
     A = tr[:, 0]
     B = tr[:, 1]
@@ -179,7 +177,6 @@ def rand_point_in_triangle(tr):
     return point
 
 
-@profile
 def _get_borders(tr):
     rect = _get_rect(tr)
 
@@ -199,6 +196,8 @@ def _get_borders(tr):
 
     return borders
 
+
+@profile
 def cv2_triangle_sum(img, tr):
     """
     Creates a binary mask of pixels inside the triangle,
