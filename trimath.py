@@ -1,6 +1,7 @@
 __author__ = 'zieghailo'
 
 import numpy as np
+import numpy.ma as ma
 from cv2 import fillConvexPoly
 from collections import namedtuple
 from scipy.spatial.qhull import Delaunay
@@ -35,7 +36,7 @@ def DelaunayXY(x, y):
         pass
     return d
 
-
+# region Barymetric approach
 def in_triangle(point, triangle):
     """
     Check if point is inside the triangle
@@ -80,6 +81,12 @@ def _y_intersects(y, tr):
 
 @profile
 def triangle_sum(img, tr):
+    # return barymetric_triangle_sum(img, tr)
+    res = cv2_triangle_sum(img, tr)
+    return res[:2]
+
+
+def barymetric_triangle_sum(img, tr):
     """
     Returns the average RGB value for the pixels in the triangle tr,
     for the image img.
@@ -118,25 +125,6 @@ def _get_rect(tr):
     _west  = np.floor(np.amin(tr[0])).astype(int)
     return Rect(_north, _south, _east, _west)
 
-@profile
-def _get_borders(tr):
-    rect = _get_rect(tr)
-
-    borders = np.zeros([rect.north - rect.south + 1, 2])
-    for y in range(rect.south, rect.north + 1):
-        sol = _y_intersects(y, tr)
-        # simplefilter('ignore', RuntimeWarning)
-        sol = sol[rect.west <= sol]
-        sol = sol[sol <= rect.east]
-
-        if sol.size == 0:
-            continue
-
-        left  = np.round(np.amin(sol)).astype(int)
-        right = np.round(np.amax(sol)).astype(int)
-        borders[y - rect.south] = [left, right]
-
-    return borders
 
 @profile
 def _sum_row_error(img, color, y, bounds):
@@ -148,6 +136,7 @@ def _sum_row_error(img, color, y, bounds):
         error = 0
 
     return error
+
 
 @profile
 def _sum_row(img, y, bounds):
@@ -171,6 +160,7 @@ def _sum_row(img, y, bounds):
 
     return sum, num_of_pixels
 
+#endregion
 
 def rand_point_in_triangle(tr):
     A = tr[:, 0]
@@ -189,6 +179,26 @@ def rand_point_in_triangle(tr):
     return point
 
 
+@profile
+def _get_borders(tr):
+    rect = _get_rect(tr)
+
+    borders = np.zeros([rect.north - rect.south + 1, 2])
+    for y in range(rect.south, rect.north + 1):
+        sol = _y_intersects(y, tr)
+        # simplefilter('ignore', RuntimeWarning)
+        sol = sol[rect.west <= sol]
+        sol = sol[sol <= rect.east]
+
+        if sol.size == 0:
+            continue
+
+        left  = np.round(np.amin(sol)).astype(int)
+        right = np.round(np.amax(sol)).astype(int)
+        borders[y - rect.south] = [left, right]
+
+    return borders
+
 def cv2_triangle_sum(img, tr):
     """
     Creates a binary mask of pixels inside the triangle,
@@ -200,32 +210,33 @@ def cv2_triangle_sum(img, tr):
     """
 
     cutout = _image_cutout(img, tr)
-    reltr = _relative_triangle(tr)
-    trnorm = reltr.round().astype(int).transpose()
-
-    mask = _make_mask(cutout, trnorm)
+    mask = _make_mask(cutout, tr)
     pixnum = np.sum(mask)
 
-    red   = np.sum(cutout[:, :, 0] * mask) / pixnum
-    green = np.sum(cutout[:, :, 1] * mask) / pixnum
-    blue  = np.sum(cutout[:, :, 2] * mask) / pixnum
+    # assert pixnum > 0
+    if pixnum <= 0:
+        return ((0, 0, 0,), 0)
 
-    # Get the difference between the color and the error
-    cutout[:, :, 0] -= red
-    cutout[:, :, 1] -= green
-    cutout[:, :, 2] -= blue
-    cutout = np.abs(cutout)
+    maskimg_red   = ma.array(cutout[:, :, 0], mask=mask)
+    maskimg_green = ma.array(cutout[:, :, 1], mask=mask)
+    maskimg_blue  = ma.array(cutout[:, :, 2], mask=mask)
+    red   = np.mean(maskimg_red)
+    green = np.mean(maskimg_green)
+    blue  = np.mean(maskimg_blue)
 
-    red_error   = np.sum(cutout[:, :, 0] * mask)
-    green_error = np.sum(cutout[:, :, 1] * mask)
-    blue_error  = np.sum(cutout[:, :, 2] * mask)
-    error = red_error + green_error + blue_error
+    error_red   = np.sum(np.abs(maskimg_red   - red))
+    error_green = np.sum(np.abs(maskimg_green - green))
+    error_blue  = np.sum(np.abs(maskimg_blue  - blue))
 
-    color = (red / 255.0, green / 255.0, blue / 255.0)
+    error = error_red + error_green + error_blue
+
+    color = (blue / 255.0, green / 255.0, red / 255.0)  #cv2 issues, BGR instead of RGB
+
     return color, error, pixnum
 
 
-def _make_mask(cutout, rel_tri):
+def _make_mask(cutout, tr):
+    rel_tri = _relative_triangle(tr).round().astype(int).transpose()
     mask = np.zeros([cutout.shape[0], cutout.shape[1]])
     fillConvexPoly(mask, rel_tri, 1)
     return mask
@@ -253,12 +264,13 @@ if __name__ == "__main__":
     img2 = np.copy(img1)
 
     import numpy as np
-    tr = np.array([[100, 200, 300], [300, 100, 200]])
+    tr = np.array([np.random.rand(3) * img1.shape[1],
+                   np.random.rand(3) * img1.shape[0]])
 
     print "cv2 triangle sum: "
     res1 = cv2_triangle_sum(img1, tr)
     print res1
 
     print "old triangle sum"
-    res2 = triangle_sum(img2, tr)
+    res2 = barymetric_triangle_sum(img2, tr)
     print res2

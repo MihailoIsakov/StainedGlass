@@ -17,7 +17,7 @@ def main():
     img = cv2.imread('images/lion.jpg')
     img = np.flipud(img)
 
-    mesh = Mesh(img, 1000)
+    mesh = Mesh(img, 100)
 
     print "Triangulating."
     mesh.delaunay()
@@ -39,8 +39,8 @@ def main():
         past = now
         col = FlatMeshCollection(mesh)
         plotter.plot_mesh_collection(col)
-        plotter.plot_points(mesh)
-        plotter.plot_arrow(mesh)
+        # plotter.plot_points(mesh)
+        # plotter.plot_arrow(mesh)
 
     plotter.keep_plot_open()
 
