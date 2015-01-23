@@ -17,7 +17,7 @@ def main():
     img = cv2.imread('images/lion.jpg')
     img = np.flipud(img)
 
-    mesh = Mesh(img, 100)
+    mesh = Mesh(img, 1000)
 
     print "Triangulating."
     mesh.delaunay()
@@ -34,10 +34,10 @@ def main():
     cnt = 0
     while True:
         cnt += 1
-        mesh.evolve(maxerr=20000, minerr=50000)
+        mesh.evolve(maxerr=10000, minerr=50000)
 
         now = time()
-        print(now - past)
+        print("Time elapsed: ", now - past)
         past = now
         if (cnt % 1 == 0):
             col = FlatMeshCollection(mesh)

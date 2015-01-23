@@ -77,6 +77,7 @@ def plot_global_errors(error):
     errors.append(error)
     errorPlot.plot(errors, 'r')
     plt.figure(2)
+    plt.ylim(0)
     plt.draw()
 
 
