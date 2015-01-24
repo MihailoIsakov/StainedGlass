@@ -181,7 +181,7 @@ class Mesh(object):
             self.process_triangle(triangle)
 
     @profile
-    def evolve(self, maxerr = 2000, minerr=500):
+    def evolve(self, maxerr = 2000, minerr=500, parallel=False):
         self.update_errors()
         for p in self.points:
             p.move()
@@ -195,7 +195,7 @@ class Mesh(object):
                 self.split_triangle(tr)
 
         self.delaunay()
-        self.colorize_stack(parallel=True)
+        self.colorize_stack(parallel)
 
     @profile
     def colorize_stack(self, parallel=False):
@@ -219,17 +219,8 @@ class Mesh(object):
 
             for triangle, res in zip(self._triangle_stack, results):
                 self._triangle_cache.set(triangle, res)
-            #
-            # stack_vertices = [t.flat_vertices for t in self._triangle_stack]
-            #
-            # pool = Pool()
-            # result = map(f, stack_vertices)
-            # pool.close()
-            # pool.join()
-            #
-            # for i, tr in enumerate(self._triangle_stack):
-            #     self._triangle_stack[i]._color = result[i][0]
-            #     self._triangle_stack[i]._error = result[i][1]
+
+            self._triangle_stack.clear()
 
     def is_consistent(self):
         cons = True

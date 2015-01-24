@@ -33,7 +33,7 @@ def main():
     cnt = 0
     while True:
         cnt += 1
-        mesh.evolve(maxerr=100000, minerr=500000)
+        mesh.evolve(maxerr=100000, minerr=500000, parallel=True)
 
         now = time()
         print("Time elapsed: ", now - past)
