@@ -6,11 +6,12 @@ from collections import deque
 
 from point import Point as BasePoint
 from PSOpoint import PSOPoint as Point
-
-from trimath import triangle_sum, rand_point_in_triangle, DelaunayXY
+from trimath import triangle_sum, triangle_sum_sw, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
-
+# multiprocessing approach
+from functools import partial
+from multiprocessing import Pool
 
 # region needed so that @profile doesn't cause an error
 import __builtin__
@@ -194,7 +195,7 @@ class Mesh(object):
                 self.split_triangle(tr)
 
         self.delaunay()
-        self.colorize_stack(parallel=False)
+        self.colorize_stack(parallel=True)
 
     @profile
     def colorize_stack(self, parallel=False):
@@ -206,8 +207,18 @@ class Mesh(object):
             if len(self._triangle_stack) != 0:
                 raise AssertionError("Stack not fully colored")
         else:
-            raise NotImplementedError
-            # f = functools.partial(triangle_sum, self.image)
+            # raise NotImplementedError
+            f = partial(triangle_sum_sw, img=self.image)
+
+            pool = Pool(processes=8)
+            triangles = list(self._triangle_stack)
+            results = pool.map(f, triangles)
+
+            pool.close()
+            pool.join()
+
+            for triangle, res in zip(self._triangle_stack, results):
+                self._triangle_cache.set(triangle, res)
             #
             # stack_vertices = [t.flat_vertices for t in self._triangle_stack]
             #

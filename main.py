@@ -14,7 +14,7 @@ def main():
 
     global mesh
     import cv2
-    img = cv2.imread('images/lion.jpg')
+    img = cv2.imread('images/renoir.jpg')
     img = np.flipud(img)
 
     mesh = Mesh(img, 1000)
@@ -30,16 +30,15 @@ def main():
     plotter.plot_mesh_collection(col)
 
     past = time()
-    now = 0
     cnt = 0
     while True:
         cnt += 1
-        mesh.evolve(maxerr=10000, minerr=50000)
+        mesh.evolve(maxerr=100000, minerr=500000)
 
         now = time()
         print("Time elapsed: ", now - past)
         past = now
-        if (cnt % 1 == 0):
+        if (cnt % 10 == 0):
             col = FlatMeshCollection(mesh)
             plotter.plot_mesh_collection(col)
             plotter.plot_global_errors(mesh.error)

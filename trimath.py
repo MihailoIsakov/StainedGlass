@@ -37,6 +37,8 @@ def DelaunayXY(x, y):
     return d
 
 
+def triangle_sum_sw(tr, img):
+    return triangle_sum(img, tr)
 
 
 def triangle_sum(img, tr):
