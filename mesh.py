@@ -10,7 +10,6 @@ from trimath import triangle_sum, triangle_sum_sw, rand_point_in_triangle, Delau
 from support.lru_cache import LRUCache
 
 # multiprocessing approach
-from functools import partial
 from multiprocessing import Pool
 
 # region needed so that @profile doesn't cause an error
@@ -202,17 +201,14 @@ class Mesh(object):
         if not parallel:
             while len(self._triangle_stack) > 0:
                 triangle = self._triangle_stack.pop()
-                result = triangle_sum(self.image, triangle)
+                result = triangle_sum(triangle)
                 self._triangle_cache.set(triangle, result)
             if len(self._triangle_stack) != 0:
                 raise AssertionError("Stack not fully colored")
         else:
-            # raise NotImplementedError
-            f = partial(triangle_sum_sw, img=self.image)
-
             pool = Pool(processes=8)
             triangles = list(self._triangle_stack)
-            results = pool.map(f, triangles)
+            results = pool.map(triangle_sum, triangles)
 
             pool.close()
             pool.join()

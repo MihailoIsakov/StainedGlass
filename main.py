@@ -4,6 +4,8 @@ __author__ = 'zieghailo'
 
 from mesh import Mesh
 from support.meshcollection import FlatMeshCollection
+import trimath
+
 import numpy as np
 from time import time
 
@@ -16,6 +18,7 @@ def main():
     import cv2
     img = cv2.imread('images/renoir.jpg')
     img = np.flipud(img)
+    trimath.set_image(img)
 
     mesh = Mesh(img, 1000)
 
@@ -38,12 +41,11 @@ def main():
         now = time()
         print("Time elapsed: ", now - past)
         past = now
-        if (cnt % 10 == 0):
+        plotter.plot_global_errors(mesh.error)
+
+        if (cnt % 2 == 0):
             col = FlatMeshCollection(mesh)
             plotter.plot_mesh_collection(col)
-            plotter.plot_global_errors(mesh.error)
-            # plotter.plot_points(mesh)
-            # plotter.plot_arrow(mesh)
 
     plotter.keep_plot_open()
 

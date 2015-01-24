@@ -37,15 +37,18 @@ def DelaunayXY(x, y):
     return d
 
 
+def set_image(img):
+    global _image
+    _image = img
+
+
 def triangle_sum_sw(tr, img):
     return triangle_sum(img, tr)
 
 
 def triangle_sum(img, tr):
-    # return barymetric_triangle_sum(img, tr)
     res = cv2_triangle_sum(img, tr)
-    return res[:2]
-
+    return res
 
 
 def _get_rect(tr):
@@ -106,7 +109,42 @@ def cv2_triangle_sum(img, tr):
     assert type(error) is not np.ma.core.MaskedConstant
     color = (blue / 255.0, green / 255.0, red / 255.0)  #cv2 issues, BGR instead of RGB
 
-    return color, error, pixnum
+    return color, error
+
+
+def triangle_sum(tr):
+    """
+    Creates a binary mask of pixels inside the triangle,
+    and multiplies it with the image.
+    It then calculates the sum of the whole matrix.
+    :param img: The minimal image containing the triangle, defined by _get_rect
+    :param tr:  The global triangle coordinates, 2x3 numpy array
+    :return: The color, error_sum, and number of pixels
+    """
+    global _image
+    cutout = _image_cutout(_image, tr)
+    mask = _make_mask(cutout, tr)
+    pixnum = np.sum(np.invert(mask == 1))
+
+    if pixnum <= 0:
+        return (0, 0, 0,), 0, 0
+
+    maskimg_red   = ma.array(cutout[:, :, 0], mask=mask)
+    maskimg_green = ma.array(cutout[:, :, 1], mask=mask)
+    maskimg_blue  = ma.array(cutout[:, :, 2], mask=mask)
+    red   = np.mean(maskimg_red)
+    green = np.mean(maskimg_green)
+    blue  = np.mean(maskimg_blue)
+
+    error_red   = np.sum(np.abs(maskimg_red   - red))
+    error_green = np.sum(np.abs(maskimg_green - green))
+    error_blue  = np.sum(np.abs(maskimg_blue  - blue))
+
+    error = error_red + error_green + error_blue
+    assert type(error) is not np.ma.core.MaskedConstant
+    color = (blue / 255.0, green / 255.0, red / 255.0)  #cv2 issues, BGR instead of RGB
+
+    return color, error
 
 
 def _make_mask(cutout, tr):
