@@ -1,11 +1,9 @@
-#! /usr/bin/env python
-
 __author__ = 'zieghailo'
 import numpy as np
 from collections import deque
 
 from point import Point as BasePoint
-from PSOpoint import PSOPoint as Point
+from SApoint import SApoint as Point
 from trimath import triangle_sum, triangle_sum_sw, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
@@ -42,6 +40,12 @@ class Mesh(object):
 
         self._triangulation = None
         self._randomize()
+
+        print("Starting triangulation.")
+        self.delaunay()
+        print("Colorizing stack")
+        self.colorize_stack()
+        self.update_errors()
 
     def _randomize(self):
         # TODO maybe we need to reverse height and width?
@@ -179,25 +183,34 @@ class Mesh(object):
             self._triangles.append(triangle)
             self.process_triangle(triangle)
 
-    @profile
-    def evolve(self, maxerr = 2000, minerr=500, parallel=False):
-        self.update_errors()
-        for p in self.points:
-            p.move()
-
-        for p in self.points:
-            if p.error < minerr:
-                self.remove_point(p)
-
-        for tr in self.triangles:
-            if self.get_triangle_error(tr) > maxerr:
-                self.split_triangle(tr)
-
+    def triangulate(self, parallel=True):
         self.delaunay()
         self.colorize_stack(parallel)
+        self.update_errors()
 
     @profile
-    def colorize_stack(self, parallel=False):
+    def evolve(self, temp, purge=False, maxerr = 2000, minerr=500, parallel=True):
+        for p in self.points:
+            p.shift(temp)
+
+        self.triangulate()
+
+        for p in self.points:
+            p.evaluate()
+
+        if purge:
+            self.triangulate()
+
+            for p in self.points:
+                if p.error < minerr:
+                    self.remove_point(p)
+
+            for tr in self.triangles:
+                if self.get_triangle_error(tr) > maxerr:
+                    self.split_triangle(tr)
+
+    @profile
+    def colorize_stack(self, parallel=True):
         if not parallel:
             while len(self._triangle_stack) > 0:
                 triangle = self._triangle_stack.pop()

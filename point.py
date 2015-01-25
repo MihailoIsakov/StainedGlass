@@ -53,6 +53,11 @@ class Point(object):
     def position(self):
         return self._position
 
+    @position.setter
+    def position(self, val):
+        self._position = val
+        self._position = np.clip(self._position, [0, 0], [Point.maxx, Point.maxy])
+
     @property
     def error(self):
         return self._error
@@ -60,8 +65,6 @@ class Point(object):
     @error.setter
     def error(self, val):
         self._error = val
-        if val < self._least_error:
-            self._least_error = val
     # endregion
 
     def _randomize(self):
