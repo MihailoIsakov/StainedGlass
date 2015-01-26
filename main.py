@@ -14,12 +14,13 @@ from time import time
 IMAGE_URI       = 'images/renoir.jpg'
 STARTING_POINTS = 1000
 TEMPERATURE     = 20
-TEMP_MULTIPLIER = 0.99
+TEMP_MULTIPLIER = 0.997
 MAX_ERR         = 10**6
 MIN_ERR         = 10**5
-PURGE_COUNTER   = 10
+PURGE_COUNTER   = 20
+PARALLEL        = True
 
-
+@profile
 def main():
     global mesh
 
@@ -27,7 +28,7 @@ def main():
     img = np.flipud(img)
     trimath.set_image(img)
 
-    mesh = Mesh(img, STARTING_POINTS)
+    mesh = Mesh(img, STARTING_POINTS, parallel=PARALLEL)
     mesh.triangulate(True)
 
     col = FlatMeshCollection(mesh)
@@ -42,7 +43,7 @@ def main():
         print("Temperature: "+ str(pixtemp))
         purge = not bool(cnt % PURGE_COUNTER)
 
-        mesh.evolve(pixtemp, purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=True)
+        mesh.evolve(pixtemp, purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
         if purge:
             print("Purging points: "+ str(len(mesh.points)) + " points")
 
@@ -55,12 +56,12 @@ def main():
         now = time()
         print("Time elapsed: ", now - past)
         past = now
-        plotter.plot_global_errors(mesh.error)
 
         if (cnt % 10 == 0):
             col = FlatMeshCollection(mesh)
             plotter.plot_mesh_collection(col)
             mesh.update_errors()
+            plotter.plot_global_errors(mesh.error)
             plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 
     plotter.keep_plot_open()

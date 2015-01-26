@@ -77,41 +77,6 @@ def rand_point_in_triangle(tr):
 
 
 @profile
-def cv2_triangle_sum(img, tr):
-    """
-    Creates a binary mask of pixels inside the triangle,
-    and multiplies it with the image.
-    It then calculates the sum of the whole matrix.
-    :param img: The minimal image containing the triangle, defined by _get_rect
-    :param tr:  The global triangle coordinates, 2x3 numpy array
-    :return: The color, error_sum, and number of pixels
-    """
-
-    cutout = _image_cutout(img, tr)
-    mask = _make_mask(cutout, tr)
-    pixnum = np.sum(np.invert(mask == 1))
-
-    if pixnum <= 0:
-        return (0, 0, 0,), 0, 0
-
-    maskimg_red   = ma.array(cutout[:, :, 0], mask=mask)
-    maskimg_green = ma.array(cutout[:, :, 1], mask=mask)
-    maskimg_blue  = ma.array(cutout[:, :, 2], mask=mask)
-    red   = np.mean(maskimg_red)
-    green = np.mean(maskimg_green)
-    blue  = np.mean(maskimg_blue)
-
-    error_red   = np.sum(np.abs(maskimg_red   - red))
-    error_green = np.sum(np.abs(maskimg_green - green))
-    error_blue  = np.sum(np.abs(maskimg_blue  - blue))
-
-    error = error_red + error_green + error_blue
-    assert type(error) is not np.ma.core.MaskedConstant
-    color = (blue / 255.0, green / 255.0, red / 255.0)  #cv2 issues, BGR instead of RGB
-
-    return color, error
-
-
 def triangle_sum(tr):
     """
     Creates a binary mask of pixels inside the triangle,
@@ -125,24 +90,21 @@ def triangle_sum(tr):
     cutout = _image_cutout(_image, tr)
     mask = _make_mask(cutout, tr)
     pixnum = np.sum(np.invert(mask == 1))
+    msk_shp = [mask.shape[0], mask.shape[1], 1]
+    mask = np.reshape(mask, msk_shp).repeat(3, 2)
 
     if pixnum <= 0:
         return (0, 0, 0,), 0, 0
 
-    maskimg_red   = ma.array(cutout[:, :, 0], mask=mask)
-    maskimg_green = ma.array(cutout[:, :, 1], mask=mask)
-    maskimg_blue  = ma.array(cutout[:, :, 2], mask=mask)
-    red   = np.mean(maskimg_red)
-    green = np.mean(maskimg_green)
-    blue  = np.mean(maskimg_blue)
+    maskimg = ma.array(cutout[:, :], mask=mask)
+    color = np.mean(np.mean(maskimg, 0), 0)
+    error_matrix = maskimg - color
+    error = np.sum(np.abs(error_matrix))
 
-    error_red   = np.sum(np.abs(maskimg_red   - red))
-    error_green = np.sum(np.abs(maskimg_green - green))
-    error_blue  = np.sum(np.abs(maskimg_blue  - blue))
-
-    error = error_red + error_green + error_blue
     assert type(error) is not np.ma.core.MaskedConstant
-    color = (blue / 255.0, green / 255.0, red / 255.0)  #cv2 issues, BGR instead of RGB
+
+    color[2], color[0] = color[0], color[2]  #cv2 issues, BGR instead of RGB
+    color = tuple(color / 255.0)
 
     return color, error
 

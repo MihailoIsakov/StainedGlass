@@ -67,9 +67,9 @@ def plot_arrow(mesh):
             pos = p.past_positions
             for i in range(min(STACK_SIZE - 1, len(p.past_positions) -1)):
                 c = i * 1.0 / STACK_SIZE
-                imagePlot.arrow(pos[i][0], pos[i][1],
-                         pos[i+1][0] - pos[i][0], pos[i+1][1] - pos[i][1],
-                         head_width=0.5, head_length=0.5, fc=(c,c,c), ec=(c,c,c))
+            imagePlot.arrow(pos[i][0], pos[i][1],
+                            pos[i+1][0] - pos[i][0], pos[i+1][1] - pos[i][1],
+                            head_width=0.5, head_length=0.5, fc=(c,c,c), ec=(c,c,c))
 
 
 errors = []
@@ -78,7 +78,7 @@ def plot_global_errors(error):
     errors.append(error)
     errorPlot.plot(errors, 'r')
     plt.figure(2)
-    plt.ylim(0)
+    # plt.ylim(0)
     plt.draw()
 
 
@@ -95,7 +95,7 @@ def plot_error_hist(perr, trerr):
     pyl.figure(3)
     pyl.clf()
     n, bins, patches = pyl.hist([perr, trerr], 25, histtype='bar', stacked=False, fill=True,
-                            color=['crimson', 'burlywood', ],
+                            color=['crimson', 'blue', ],
                             label=['Point errors', 'Triangle errors'])
     pyl.legend()
     pyl.draw()

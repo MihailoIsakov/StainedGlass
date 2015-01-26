@@ -27,8 +27,9 @@ class SApoint(Point):
         # move it somewhere in the circle with the radius pixtemp
         self.position = self._oldposition + pixtemp * mov
 
+    # @profile
     def evaluate(self):
-        if self.error < self._olderror:
+        if self.error <= self._olderror:
             SApoint.switched += 1
             # the new position is accepted
             self._oldposition = self.position
@@ -41,3 +42,6 @@ class SApoint(Point):
 
     def reset(self):
         self.position = self._oldposition
+
+    def accept_error(self):
+        self._olderror = self._error

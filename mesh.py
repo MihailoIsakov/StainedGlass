@@ -26,7 +26,7 @@ except AttributeError:
 
 class Mesh(object):
 
-    def __init__(self, img, n):
+    def __init__(self, img, n, parallel=True):
         self.N = n
         self._img = img
         BasePoint.set_borders(img.shape[1], img.shape[0]) # for some reason shape gives us y, then x
@@ -43,11 +43,7 @@ class Mesh(object):
         self._triangulation = None
         self._randomize()
 
-        print("Starting triangulation.")
-        self.delaunay()
-        print("Colorizing stack")
-        self.colorize_stack()
-        self.update_errors()
+        self.triangulate(parallel)
 
     def _randomize(self):
         # TODO maybe we need to reverse height and width?
@@ -112,6 +108,7 @@ class Mesh(object):
         self.add_point(point)
         return point
 
+    @profile
     def update_errors(self):
         for p in self.points:
             p.error = 0
@@ -189,6 +186,7 @@ class Mesh(object):
             self._triangles.append(triangle)
             self.process_triangle(triangle)
 
+    @profile
     def triangulate(self, parallel=True):
         self.delaunay()
         self.colorize_stack(parallel)
@@ -199,10 +197,14 @@ class Mesh(object):
         for p in self.points:
             p.shift(temp)
 
-        self.triangulate()
+        self.triangulate(parallel)
 
         for p in self.points:
             p.evaluate()
+
+        self.triangulate()
+        for p in self.points:
+            p.accept_error()
 
         if purge:
             self.ordered_purge(0.1, maxerr, minerr)
@@ -222,6 +224,7 @@ class Mesh(object):
                 if np.random.rand() < chance:
                     self.split_triangle(tr)
 
+    @profile
     def ordered_purge(self, decimate_percentage, maxerr, minerr):
         self.triangulate()
 
