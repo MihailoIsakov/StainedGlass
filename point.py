@@ -60,6 +60,8 @@ class Point(object):
 
     @property
     def error(self):
+        if self._error is np.nan:
+            raise RuntimeError("SApoint error is not calculated!")
         return self._error
 
     @error.setter

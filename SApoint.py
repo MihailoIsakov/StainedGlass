@@ -4,12 +4,15 @@ import numpy as np
 
 from point import Point
 
+
 class SApoint(Point):
+    switched = 0
+    notswitched = 0
 
     def __init__(self, x=None, y=None, is_fixed=False):
         Point.__init__(self, x, y, is_fixed=is_fixed)
         self._oldposition = np.copy(self.position)
-        self._olderror = np.copy(self.error)
+        self._olderror = np.inf
 
     def shift(self, pixtemp):
         if self._fixed:
@@ -26,10 +29,12 @@ class SApoint(Point):
 
     def evaluate(self):
         if self.error < self._olderror:
+            SApoint.switched += 1
             # the new position is accepted
             self._oldposition = self.position
             self._olderror = self.error
         else:
+            SApoint.notswitched += 1
             self.position = self._oldposition
             self.error = np.nan
 

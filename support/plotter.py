@@ -94,7 +94,7 @@ def plot_matrix(mat):
 def plot_error_hist(perr, trerr):
     pyl.figure(3)
     pyl.clf()
-    n, bins, patches = pyl.hist([perr, trerr], 50, histtype='bar', stacked=True, fill=True,
+    n, bins, patches = pyl.hist([perr, trerr], 25, histtype='bar', stacked=False, fill=True,
                             color=['crimson', 'burlywood', ],
                             label=['Point errors', 'Triangle errors'])
     pyl.legend()

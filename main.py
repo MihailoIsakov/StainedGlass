@@ -7,7 +7,6 @@ import trimath
 from support import plotter
 from support.meshcollection import FlatMeshCollection
 
-
 import cv2
 import numpy as np
 from time import time
@@ -15,10 +14,11 @@ from time import time
 IMAGE_URI       = 'images/renoir.jpg'
 STARTING_POINTS = 1000
 TEMPERATURE     = 20
-TEMP_MULTIPLIER = 0.97
+TEMP_MULTIPLIER = 0.99
 MAX_ERR         = 10**6
 MIN_ERR         = 10**5
 PURGE_COUNTER   = 10
+
 
 def main():
     global mesh
@@ -38,12 +38,17 @@ def main():
     pixtemp = TEMPERATURE  # pixels radius
 
     for cnt in range(10**6):
+
         print("Temperature: "+ str(pixtemp))
         purge = not bool(cnt % PURGE_COUNTER)
 
         mesh.evolve(pixtemp, purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=True)
         if purge:
             print("Purging points: "+ str(len(mesh.points)) + " points")
+
+        print()
+        from SApoint import SApoint
+        print(SApoint.switched, SApoint.notswitched)
 
         pixtemp *= TEMP_MULTIPLIER
 
@@ -52,7 +57,7 @@ def main():
         past = now
         plotter.plot_global_errors(mesh.error)
 
-        if (cnt % 1 == 0):
+        if (cnt % 10 == 0):
             col = FlatMeshCollection(mesh)
             plotter.plot_mesh_collection(col)
             mesh.update_errors()
