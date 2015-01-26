@@ -9,6 +9,8 @@ from support.lru_cache import LRUCache
 
 # multiprocessing approach
 from multiprocessing import Pool
+from random import sample
+from heapq import nlargest, nsmallest
 
 # region needed so that @profile doesn't cause an error
 import __builtin__
@@ -80,6 +82,10 @@ class Mesh(object):
     @property
     def point_errors(self):
         return [p.error for p in self.points]
+
+    @property
+    def triangle_errors(self):
+        return [self.get_triangle_error(tr) for tr in self.triangles]
 
     @property
     def error(self):
@@ -189,7 +195,7 @@ class Mesh(object):
         self.update_errors()
 
     @profile
-    def evolve(self, temp, purge=False, maxerr = 2000, minerr=500, parallel=True):
+    def evolve(self, temp, purge=False, maxerr=2000, minerr=500, parallel=True):
         for p in self.points:
             p.shift(temp)
 
@@ -199,15 +205,42 @@ class Mesh(object):
             p.evaluate()
 
         if purge:
-            self.triangulate()
+            self.ordered_purge(0.1, maxerr, minerr)
 
-            for p in self.points:
-                if p.error < minerr:
+    def random_purge(self, sample_percentage, chance, maxerr, minerr):
+        self.triangulate()
+
+        sample_size = int(len(self.points) * sample_percentage)
+        for p in sample(self.points, sample_size):
+            if p.error < minerr:
+                if np.random.rand() < chance:
                     self.remove_point(p)
 
-            for tr in self.triangles:
-                if self.get_triangle_error(tr) > maxerr:
+        sample_size = int(len(self.triangles) * sample_percentage)
+        for tr in sample(self.triangles, sample_size):
+            if self.get_triangle_error(tr) > maxerr:
+                if np.random.rand() < chance:
                     self.split_triangle(tr)
+
+    def ordered_purge(self, decimate_percentage, maxerr, minerr):
+        self.triangulate()
+
+        point_dec = int(len(self.points) * decimate_percentage)
+        triang_dec = int(len(self.triangles) * decimate_percentage)
+
+        smallest = nsmallest(point_dec, self.points, lambda x: x.error)
+        for point in smallest:
+            if point.error > minerr:
+                break  # in case even the worst points are within range, quit
+            self.remove_point(point)
+
+        largest = nlargest(triang_dec, self.triangles, lambda x: self.get_triangle_error(x))
+        for triangle in largest:
+            if self.get_triangle_error(triangle) < maxerr:
+                break  # in case even the worst triangles are within range, quit
+            self.split_triangle(triangle)
+
+        self.triangulate()
 
     @profile
     def colorize_stack(self, parallel=True):

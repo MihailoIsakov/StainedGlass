@@ -1,6 +1,7 @@
 __author__ = 'zieghailo'
 
 import matplotlib.pyplot as plt
+import matplotlib.pylab as pyl
 import numpy as np
 
 imagePlot = None
@@ -89,3 +90,12 @@ def keep_plot_open():
 def plot_matrix(mat):
     plt.matshow(mat)
     plt.show()
+
+def plot_error_hist(perr, trerr):
+    pyl.figure(3)
+    pyl.clf()
+    n, bins, patches = pyl.hist([perr, trerr], 50, histtype='bar', stacked=True, fill=True,
+                            color=['crimson', 'burlywood', ],
+                            label=['Point errors', 'Triangle errors'])
+    pyl.legend()
+    pyl.draw()

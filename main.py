@@ -7,18 +7,27 @@ import trimath
 from support import plotter
 from support.meshcollection import FlatMeshCollection
 
+
 import cv2
 import numpy as np
 from time import time
 
+IMAGE_URI       = 'images/renoir.jpg'
+STARTING_POINTS = 1000
+TEMPERATURE     = 20
+TEMP_MULTIPLIER = 0.97
+MAX_ERR         = 10**6
+MIN_ERR         = 10**5
+PURGE_COUNTER   = 10
+
 def main():
     global mesh
 
-    img = cv2.imread('images/renoir.jpg')
+    img = cv2.imread(IMAGE_URI)
     img = np.flipud(img)
     trimath.set_image(img)
 
-    mesh = Mesh(img, 1000)
+    mesh = Mesh(img, STARTING_POINTS)
     mesh.triangulate(True)
 
     col = FlatMeshCollection(mesh)
@@ -26,25 +35,28 @@ def main():
     plotter.plot_mesh_collection(col)
     past = time()
 
-    pixtemp = 30  # pixels radius
+    pixtemp = TEMPERATURE  # pixels radius
 
     for cnt in range(10**6):
-        print pixtemp
-        purge = not bool(cnt % 50)
-        if purge: print "Purging points"
+        print("Temperature: "+ str(pixtemp))
+        purge = not bool(cnt % PURGE_COUNTER)
 
-        mesh.evolve(pixtemp, purge, maxerr=100000, minerr=500000, parallel=True)
-        pixtemp *= 0.99
+        mesh.evolve(pixtemp, purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=True)
+        if purge:
+            print("Purging points: "+ str(len(mesh.points)) + " points")
+
+        pixtemp *= TEMP_MULTIPLIER
 
         now = time()
         print("Time elapsed: ", now - past)
         past = now
         plotter.plot_global_errors(mesh.error)
 
-        if (cnt % 10 == 0):
+        if (cnt % 1 == 0):
             col = FlatMeshCollection(mesh)
             plotter.plot_mesh_collection(col)
-            plotter.plot_arrow(mesh)
+            mesh.update_errors()
+            plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 
     plotter.keep_plot_open()
 
