@@ -2,9 +2,10 @@ __author__ = 'zieghailo'
 import numpy as np
 from collections import deque
 
+
 from point import Point as BasePoint
 from SApoint import SApoint as Point
-from trimath import triangle_sum, triangle_sum_sw, rand_point_in_triangle, DelaunayXY
+from trimath import cv2_triangle_sum, triangle_sum, triangle_sum_sw, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
 # multiprocessing approach
@@ -247,7 +248,11 @@ class Mesh(object):
         if not parallel:
             while len(self._triangle_stack) > 0:
                 triangle = self._triangle_stack.pop()
-                result = triangle_sum(triangle)
+
+                # triangle sum should have image as a global variable
+                result = cv2_triangle_sum(self.image, triangle)
+
+
                 self._triangle_cache.set(triangle, result)
             if len(self._triangle_stack) != 0:
                 raise AssertionError("Stack not fully colored")
