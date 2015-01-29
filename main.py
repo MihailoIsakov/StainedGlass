@@ -7,6 +7,7 @@ from support.meshcollection import FlatMeshCollection
 import numpy as np
 from time import time
 
+@profile
 def main():
     from support import plotter
 
@@ -15,6 +16,7 @@ def main():
     global mesh
     import cv2
     img = cv2.imread('images/lion.jpg')
+    cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
     img = np.flipud(img)
 
     mesh = Mesh(img, 1000)
