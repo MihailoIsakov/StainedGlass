@@ -6,7 +6,7 @@ from collections import deque
 
 from point import Point
 from PSOpoint import PSOPoint
-from trimath import triangle_sum, rand_point_in_triangle, DelaunayXY
+from trimath import cv2_triangle_sum, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
 
@@ -203,7 +203,7 @@ class Mesh(object):
         if not parallel:
             while len(self._triangle_stack) > 0:
                 triangle = self._triangle_stack.pop()
-                result = triangle_sum(self.image, triangle)
+                result = cv2_triangle_sum(self.image, triangle)
                 self._triangle_cache.set(triangle, result)
             if len(self._triangle_stack) != 0:
                 raise AssertionError("Stack not fully colored")
