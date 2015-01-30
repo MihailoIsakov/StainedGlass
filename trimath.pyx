@@ -15,11 +15,11 @@ Rect = namedtuple('Rect', ['north', 'south', 'east', 'west'])
 # The image being processed, in module scope so that map doesn't require multiple arguments
 # cdef np.uint8_t[:, :, :] IMAGE
 
-def set_image(img):
+def set_image(np.ndarray[np.uint8_t, ndim=3] img):
     global IMAGE
     IMAGE = img
 
-def get_image():
+cdef get_image():
     global IMAGE
     return IMAGE
 
@@ -115,19 +115,23 @@ cpdef cv2_triangle_sum( np.ndarray[FLOAT_t, ndim=2] tr):
     if pixnum == 0:
         return (0,0,0), 0
 
-    cdef int maxx, maxy
-    maxx = cutout.shape[0]
-    maxy = cutout.shape[1]
+    # cdef int maxx, maxy
+    # maxx = cutout.shape[0]
+    # maxy = cutout.shape[1]
 
     cdef FLOAT_t red = 0
     cdef FLOAT_t blue = 0
     cdef FLOAT_t green = 0
 
-    for x in range(maxx):
-        for y in range(maxy):
-            red   += cutout[x, y, 0] * mask[x, y]
-            green += cutout[x, y, 1] * mask[x, y]
-            blue  += cutout[x, y, 2] * mask[x, y]
+    red = np.sum(cutout[:, :, 0] * mask)
+    gren = np.sum(cutout[:, :, 1] * mask)
+    blue = np.sum(cutout[:, :, 2] * mask)
+
+    # for x in range(maxx):
+    #     for y in range(maxy):
+    #         red   += cutout[x, y, 0] * mask[x, y]
+    #         green += cutout[x, y, 1] * mask[x, y]
+    #         blue  += cutout[x, y, 2] * mask[x, y]
 
     red = red / pixnum
     blue = blue / pixnum
@@ -137,14 +141,17 @@ cpdef cv2_triangle_sum( np.ndarray[FLOAT_t, ndim=2] tr):
     cdef FLOAT_t green_err = 0
     cdef FLOAT_t blue_err  = 0
 
-    x = 0
-    y = 0
+    red_err = np.sum(np.abs(cutout[:, :, 0] - red) * mask)
+    green_err = np.sum(np.abs(cutout[:, :, 1] - green) * mask)
+    blue_err = np.sum(np.abs(cutout[:, :, 2] - blue) * mask)
+    # x = 0
+    # y = 0
 
-    for x in range(maxx):
-        for y in range(maxy):
-            red_err   += np.abs(cutout[x, y, 0] * mask[x, y] - red)
-            green_err += np.abs(cutout[x, y, 1] * mask[x, y] - green)
-            blue_err  += np.abs(cutout[x, y, 2] * mask[x, y] - blue)
+    # for x in range(maxx):
+    #     for y in range(maxy):
+    #         red_err   += np.abs(cutout[x, y, 0] * mask[x, y] - red)
+    #         green_err += np.abs(cutout[x, y, 1] * mask[x, y] - green)
+    #         blue_err  += np.abs(cutout[x, y, 2] * mask[x, y] - blue)
 
     cdef FLOAT_t error = red_err + green_err + blue_err
     color = (red / 255.0, green / 255.0, blue / 255.0)
@@ -159,15 +166,13 @@ cdef _make_mask(np.ndarray[np.uint8_t, ndim=3] cutout, np.ndarray[np.long_t, ndi
 
 cdef _image_cutout(np.ndarray[np.uint8_t, ndim=3] img, np.ndarray[FLOAT_t, ndim=2] tr):
     rect = _get_rect(tr)
-    cutout = img[rect.south:rect.north, rect.west:rect.east]
+    cdef np.ndarray[np.uint8_t, ndim=3] cutout = img[rect.south:rect.north, rect.west:rect.east]
     return cutout
 
 
-cdef _relative_triangle(tr):
+cdef _relative_triangle(np.ndarray[FLOAT_t, ndim=2] tr):
     rect = _get_rect(tr)
-    newtr = np.copy(tr)
-
+    cdef np.ndarray[FLOAT_t, ndim=2] newtr = np.copy(tr)
     newtr[0] -= rect.west
     newtr[1] -= rect.south
-
     return newtr
