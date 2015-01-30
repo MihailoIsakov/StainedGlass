@@ -5,7 +5,7 @@ from collections import deque
 
 from point import Point as BasePoint
 from SApoint import SApoint as Point
-from trimath import cv2_triangle_sum, triangle_sum, triangle_sum_sw, rand_point_in_triangle, DelaunayXY
+from trimath import cv2_triangle_sum, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
 # multiprocessing approach
@@ -200,7 +200,7 @@ class Mesh(object):
         for p in self.points:
             p.shift(temp)
 
-        self.triangulate()
+        self.triangulate(parallel)
 
         for p in self.points:
             p.evaluate()
@@ -259,7 +259,7 @@ class Mesh(object):
         else:
             pool = Pool(processes=8)
             triangles = list(self._triangle_stack)
-            results = pool.map(triangle_sum, triangles)
+            results = pool.map(cv2_triangle_sum, triangles)
 
             pool.close()
             pool.join()

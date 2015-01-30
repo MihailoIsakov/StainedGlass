@@ -12,6 +12,18 @@ ctypedef np.float64_t FLOAT_t
 
 Rect = namedtuple('Rect', ['north', 'south', 'east', 'west'])
 
+# The image being processed, in module scope so that map doesn't require multiple arguments
+# cdef np.uint8_t[:, :, :] IMAGE
+
+def set_image(img):
+    global IMAGE
+    IMAGE = img
+
+def get_image():
+    global IMAGE
+    return IMAGE
+
+# cdef np.ndarray[np.uint8_t, ndim=3] IMAGE
 
 # region needed so that @profile doesn't cause an error
 import __builtin__
@@ -79,8 +91,8 @@ def rand_point_in_triangle(tr):
     point = A + AB * k + AC * s
     return point
 
-@profile
-cpdef cv2_triangle_sum(np.ndarray[np.uint8_t, ndim=3] img, np.ndarray[FLOAT_t, ndim=2] tr):
+
+cpdef cv2_triangle_sum( np.ndarray[FLOAT_t, ndim=2] tr):
     """
     Creates a binary mask of pixels inside the triangle,
     and multiplies it with the image.
@@ -90,7 +102,10 @@ cpdef cv2_triangle_sum(np.ndarray[np.uint8_t, ndim=3] img, np.ndarray[FLOAT_t, n
     :return: The color, error_sum, and number of pixels
     """
 
-    cdef np.ndarray[np.uint8_t, ndim=3] cutout = _image_cutout(img, tr)
+    # global IMAGE
+    IMAGE = get_image()
+
+    cdef np.ndarray[np.uint8_t, ndim=3] cutout = _image_cutout(IMAGE, tr)
     cdef np.ndarray[FLOAT_t, ndim=2] reltr = _relative_triangle(tr)
     cdef np.ndarray[np.long_t, ndim=2] normtr = reltr.round().astype(int).transpose()
 

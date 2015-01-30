@@ -24,8 +24,8 @@ def main():
     global mesh
 
     img = cv2.imread(IMAGE_URI)
-    img = np.flipud(img)
     cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
+    img = np.flipud(img)
 
     trimath.set_image(img)
 
