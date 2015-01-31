@@ -1,12 +1,15 @@
 __author__ = 'zieghailo'
 
+# cython: profile=True
+
 import numpy as np
+import cython
+cimport cython
 cimport numpy as np
 
 from cv2 import fillConvexPoly
 from collections import namedtuple
 from scipy.spatial.qhull import Delaunay
-
 
 ctypedef np.float64_t FLOAT_t
 
@@ -19,22 +22,9 @@ def set_image(np.ndarray[np.uint8_t, ndim=3] img):
     global IMAGE
     IMAGE = img
 
-cdef get_image():
+cdef np.ndarray[np.uint8_t, ndim=3] get_image():
     global IMAGE
     return IMAGE
-
-# cdef np.ndarray[np.uint8_t, ndim=3] IMAGE
-
-# region needed so that @profile doesn't cause an error
-import __builtin__
-
-try:
-    __builtin__.profile
-except AttributeError:
-    # No line profiler, provide a pass-through version
-    def profile(func): return func
-    __builtin__.profile = profile
-# endregion
 
 
 def DelaunayXY(x, y):
@@ -75,6 +65,13 @@ def _get_rect(tr):
     return Rect(_north, _south, _east, _west)
 
 
+cdef np.ndarray[np.int_t, ndim=1] _get_rect_nsew(np.ndarray[FLOAT_t, ndim=2] tr):
+    cdef int north = np.ceil(np.amax(tr[1])).astype(int)
+    cdef int south = np.floor(np.amin(tr[1])).astype(int)
+    cdef int east  = np.ceil(np.amax(tr[0])).astype(int)
+    cdef int west  = np.floor(np.amin(tr[0])).astype(int)
+    return np.array([north, south, east, west])
+
 def rand_point_in_triangle(tr):
     A = tr[:, 0]
     B = tr[:, 1]
@@ -92,7 +89,9 @@ def rand_point_in_triangle(tr):
     return point
 
 
-cpdef cv2_triangle_sum( np.ndarray[FLOAT_t, ndim=2] tr):
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def cv2_triangle_sum(np.ndarray[FLOAT_t, ndim=2] tr):
     """
     Creates a binary mask of pixels inside the triangle,
     and multiplies it with the image.
@@ -102,8 +101,7 @@ cpdef cv2_triangle_sum( np.ndarray[FLOAT_t, ndim=2] tr):
     :return: The color, error_sum, and number of pixels
     """
 
-    # global IMAGE
-    IMAGE = get_image()
+    cdef np.ndarray[np.uint8_t, ndim=3] IMAGE = get_image()
 
     cdef np.ndarray[np.uint8_t, ndim=3] cutout = _image_cutout(IMAGE, tr)
     cdef np.ndarray[FLOAT_t, ndim=2] reltr = _relative_triangle(tr)
@@ -124,7 +122,7 @@ cpdef cv2_triangle_sum( np.ndarray[FLOAT_t, ndim=2] tr):
     cdef FLOAT_t green = 0
 
     red = np.sum(cutout[:, :, 0] * mask)
-    gren = np.sum(cutout[:, :, 1] * mask)
+    green = np.sum(cutout[:, :, 1] * mask)
     blue = np.sum(cutout[:, :, 2] * mask)
 
     # for x in range(maxx):
@@ -164,15 +162,15 @@ cdef _make_mask(np.ndarray[np.uint8_t, ndim=3] cutout, np.ndarray[np.long_t, ndi
     return mask
 
 
-cdef _image_cutout(np.ndarray[np.uint8_t, ndim=3] img, np.ndarray[FLOAT_t, ndim=2] tr):
+cdef np.ndarray[np.uint8_t, ndim=3] _image_cutout(np.ndarray[np.uint8_t, ndim=3] img, np.ndarray[FLOAT_t, ndim=2] tr):
     rect = _get_rect(tr)
     cdef np.ndarray[np.uint8_t, ndim=3] cutout = img[rect.south:rect.north, rect.west:rect.east]
     return cutout
 
 
 cdef _relative_triangle(np.ndarray[FLOAT_t, ndim=2] tr):
-    rect = _get_rect(tr)
+    cdef np.ndarray[np.int_t, ndim=1] nsew = _get_rect_nsew(tr)
     cdef np.ndarray[FLOAT_t, ndim=2] newtr = np.copy(tr)
-    newtr[0] -= rect.west
-    newtr[1] -= rect.south
+    newtr[0] -= nsew[3]
+    newtr[1] -= nsew[1]
     return newtr

@@ -190,6 +190,7 @@ class Mesh(object):
             self._triangles.append(triangle)
             self.process_triangle(triangle)
 
+    @profile
     def triangulate(self, parallel=True):
         self.delaunay()
         self.colorize_stack(parallel)
@@ -250,8 +251,7 @@ class Mesh(object):
                 triangle = self._triangle_stack.pop()
 
                 # triangle sum should have image as a global variable
-                result = cv2_triangle_sum(self.image, triangle)
-
+                result = cv2_triangle_sum(triangle)
 
                 self._triangle_cache.set(triangle, result)
             if len(self._triangle_stack) != 0:
