@@ -1,6 +1,6 @@
 __author__ = 'zieghailo'
 
-# cython: profile=True
+# cython: profile=true
 
 import numpy as np
 import cython
@@ -70,7 +70,8 @@ cdef np.ndarray[np.int_t, ndim=1] _get_rect_nsew(np.ndarray[FLOAT_t, ndim=2] tr)
     cdef int south = np.floor(np.amin(tr[1])).astype(int)
     cdef int east  = np.ceil(np.amax(tr[0])).astype(int)
     cdef int west  = np.floor(np.amin(tr[0])).astype(int)
-    return np.array([north, south, east, west])
+    cdef np.ndarray[np.int_t, ndim=1] result = np.array([north, south, east, west])
+    return result
 
 def rand_point_in_triangle(tr):
     A = tr[:, 0]

@@ -1,4 +1,4 @@
-from hashlib import sha1
+from xxhash import xxh64
 
 from numpy import all, array, uint8
 
@@ -29,7 +29,7 @@ class hashable(object):
         '''
         self.__tight = tight
         self.__wrapped = array(wrapped) if tight else wrapped
-        self.__hash = int(sha1(wrapped.view(uint8)).hexdigest(), 16)
+        self.__hash = int(xxh64(wrapped.view(uint8)).hexdigest(), 16)
 
     def __eq__(self, other):
         return all(self.__wrapped == other.__wrapped)
