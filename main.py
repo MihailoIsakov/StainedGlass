@@ -12,13 +12,14 @@ import numpy as np
 from time import time
 
 IMAGE_URI       = 'images/renoir.jpg'
-STARTING_POINTS = 1000
+STARTING_POINTS = 100
 TEMPERATURE     = 20
 TEMP_MULTIPLIER = 0.997
-MAX_ERR         = 10**6
-MIN_ERR         = 10**5
-PURGE_COUNTER   = 20
+MAX_ERR         = 10 ** 6
+MIN_ERR         = 10 ** 5
+PURGE_COUNTER   = 10**60
 PARALLEL        = True
+PRINT_COUNTER   = 5
 
 @profile
 def main():
@@ -41,7 +42,7 @@ def main():
     for cnt in range(10**6):
 
         print("Temperature: "+ str(pixtemp))
-        purge = not bool(cnt % PURGE_COUNTER)
+        purge = not bool((cnt + 1) % PURGE_COUNTER)
 
         mesh.evolve(pixtemp, purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
         if purge:
@@ -57,11 +58,14 @@ def main():
         print("Time elapsed: ", now - past)
         past = now
 
-        if (cnt % 10 == 0):
+        plotter.plot_global_errors(mesh.error)
+
+        if cnt % PRINT_COUNTER == 0:
             col = FlatMeshCollection(mesh)
+            # plotter.plot_points(mesh)
+            # plotter.plot_arrow(mesh)
             plotter.plot_mesh_collection(col)
             mesh.update_errors()
-            plotter.plot_global_errors(mesh.error)
             plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 
     plotter.keep_plot_open()

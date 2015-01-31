@@ -6,7 +6,7 @@ __pycache__/
 
 #line_profiler files
 *.lprof
-
+*.prof
 
 # Distribution / packaging
 .idea/

@@ -46,11 +46,6 @@ def triangle_sum_sw(tr, img):
     return triangle_sum(img, tr)
 
 
-def triangle_sum(img, tr):
-    res = cv2_triangle_sum(img, tr)
-    return res
-
-
 def _get_rect(tr):
     _north = np.ceil(np.amax(tr[1])).astype(int)
     _south = np.floor(np.amin(tr[1])).astype(int)
@@ -99,7 +94,10 @@ def triangle_sum(tr):
     maskimg = ma.array(cutout[:, :], mask=mask)
     color = np.mean(np.mean(maskimg, 0), 0)
     error_matrix = maskimg - color
+
+    #relative error
     error = np.sum(np.abs(error_matrix))
+    # error = _relative_error(error, pixnum)
 
     assert type(error) is not np.ma.core.MaskedConstant
 
@@ -107,6 +105,10 @@ def triangle_sum(tr):
     color = tuple(color / 255.0)
 
     return color, error
+
+
+def _relative_error(abs_error, pix):
+    return abs_error / pix.astype(float) / 255.0
 
 
 def _make_mask(cutout, tr):

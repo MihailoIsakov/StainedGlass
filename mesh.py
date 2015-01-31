@@ -216,7 +216,7 @@ class Mesh(object):
                     self.split_triangle(tr)
 
     @profile
-    def ordered_purge(self, decimate_percentage, maxerr, minerr):
+    def ordered_purge(self, decimate_percentage, maxerr, minerr, chance=0.3):
         self.triangulate()
 
         point_dec = int(len(self.points) * decimate_percentage)
@@ -226,13 +226,15 @@ class Mesh(object):
         for point in smallest:
             if point.error > minerr:
                 break  # in case even the worst points are within range, quit
-            self.remove_point(point)
+            if np.random.rand() < chance:
+                self.remove_point(point)
 
         largest = nlargest(triang_dec, self.triangles, lambda x: self.get_triangle_error(x))
         for triangle in largest:
             if self.get_triangle_error(triangle) < maxerr:
                 break  # in case even the worst triangles are within range, quit
-            self.split_triangle(triangle)
+            if np.random.rand() < chance:
+                self.split_triangle(triangle)
 
         self.triangulate()
 

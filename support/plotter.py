@@ -56,7 +56,7 @@ def plot_points(mesh):
 
 def plot_arrow(mesh):
     global imagePlot
-    imagePlot.clear()
+    # imagePlot.clear()
     STACK_SIZE = 10
     for p in mesh.points:
         p.past_positions.append([p.x, p.y])
