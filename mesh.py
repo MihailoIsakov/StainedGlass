@@ -2,9 +2,10 @@ __author__ = 'zieghailo'
 import numpy as np
 from collections import deque
 
+
 from point import Point as BasePoint
 from SApoint import SApoint as Point
-from trimath import triangle_sum, triangle_sum_sw, rand_point_in_triangle, DelaunayXY
+from trimath import cv2_triangle_sum, rand_point_in_triangle, DelaunayXY
 from support.lru_cache import LRUCache
 
 # multiprocessing approach
@@ -13,6 +14,16 @@ from random import sample
 from heapq import nlargest, nsmallest
 
 
+# region needed so that @profile doesn't cause an error
+import __builtin__
+
+try:
+    __builtin__.profile
+except AttributeError:
+    # No line profiler, provide a pass-through version
+    def profile(func): return func
+    __builtin__.profile = profile
+# endregion
 
 
 class Mesh(object):
@@ -243,14 +254,17 @@ class Mesh(object):
         if not parallel:
             while len(self._triangle_stack) > 0:
                 triangle = self._triangle_stack.pop()
-                result = triangle_sum(triangle)
+
+                # triangle sum should have image as a global variable
+                result = cv2_triangle_sum(triangle)
+
                 self._triangle_cache.set(triangle, result)
             if len(self._triangle_stack) != 0:
                 raise AssertionError("Stack not fully colored")
         else:
             pool = Pool(processes=8)
             triangles = list(self._triangle_stack)
-            results = pool.map(triangle_sum, triangles)
+            results = pool.map(cv2_triangle_sum, triangles)
 
             pool.close()
             pool.join()

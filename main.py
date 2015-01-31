@@ -13,20 +13,34 @@ from time import time
 
 IMAGE_URI       = 'images/renoir.jpg'
 STARTING_POINTS = 100
-TEMPERATURE     = 20
+TEMPERATURE     = 30
 TEMP_MULTIPLIER = 0.997
-MAX_ERR         = 10 ** 6
-MIN_ERR         = 10 ** 5
-PURGE_COUNTER   = 10**60
+MAX_ERR         = 10**6
+MIN_ERR         = 10**5
+PURGE_COUNTER   = 10 ** 10
+PRINT_COUNTER   = 10 ** 10
 PARALLEL        = True
-PRINT_COUNTER   = 5
+PRINT_COUNTER   = 10
+
+# region needed so that @profile doesn't cause an error
+import __builtin__
+
+try:
+    __builtin__.profile
+except AttributeError:
+    # No line profiler, provide a pass-through version
+    def profile(func): return func
+    __builtin__.profile = profile
+# endregion
 
 @profile
 def main():
     global mesh
 
     img = cv2.imread(IMAGE_URI)
+    cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
     img = np.flipud(img)
+
     trimath.set_image(img)
 
     mesh = Mesh(img, STARTING_POINTS, parallel=PARALLEL)
@@ -60,7 +74,7 @@ def main():
 
         plotter.plot_global_errors(mesh.error)
 
-        if cnt % PRINT_COUNTER == 0:
+        if (cnt % PRINT_COUNTER == PRINT_COUNTER - 1):
             col = FlatMeshCollection(mesh)
             # plotter.plot_points(mesh)
             # plotter.plot_arrow(mesh)
