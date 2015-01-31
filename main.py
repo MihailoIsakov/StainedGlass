@@ -17,8 +17,7 @@ TEMPERATURE     = 30
 TEMP_MULTIPLIER = 0.997
 MAX_ERR         = 10**6
 MIN_ERR         = 10**5
-PURGE_COUNTER   = 10 ** 10
-PRINT_COUNTER   = 10 ** 10
+PURGE_COUNTER   = 30
 PARALLEL        = True
 PRINT_COUNTER   = 10
 
@@ -55,12 +54,12 @@ def main():
 
     for cnt in range(10**6):
 
-        print("Temperature: "+ str(pixtemp))
+        print("Temperature: "+str(pixtemp))
         purge = not bool((cnt + 1) % PURGE_COUNTER)
 
         mesh.evolve(pixtemp, purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
         if purge:
-            print("Purging points: "+ str(len(mesh.points)) + " points")
+            print("Purging points: "+str(len(mesh.points)) + " points")
 
         print()
         from SApoint import SApoint
@@ -72,15 +71,15 @@ def main():
         print("Time elapsed: ", now - past)
         past = now
 
-        plotter.plot_global_errors(mesh.error)
+        if (cnt % PRINT_COUNTER == (PRINT_COUNTER - 1)):
+            plotter.plot_global_errors(mesh.error)
 
-        if (cnt % PRINT_COUNTER == PRINT_COUNTER - 1):
             col = FlatMeshCollection(mesh)
             # plotter.plot_points(mesh)
             # plotter.plot_arrow(mesh)
             plotter.plot_mesh_collection(col)
             mesh.update_errors()
-            plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
+            # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 
     plotter.keep_plot_open()
 
