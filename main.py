@@ -11,13 +11,13 @@ import cv2
 import numpy as np
 from time import time
 
-IMAGE_URI       = 'images/lion.jpg'
-STARTING_POINTS = 500
-TEMPERATURE     = 30
-TEMP_MULTIPLIER = 0.999
-MAX_ERR         = 10**5
-MIN_ERR         = 10**5
-PURGE_COUNTER   = 10*100
+IMAGE_URI       = 'images/renoir.jpg'
+STARTING_POINTS = 200
+TEMPERATURE     = 300
+TEMP_MULTIPLIER = 0.995
+MAX_ERR         = 10**6
+MIN_ERR         = 10**6
+PURGE_COUNTER   = 50**100
 PARALLEL        = True
 PRINT           = True
 PRINT_COUNTER   = 30
@@ -60,7 +60,7 @@ def main():
         print("Temperature: "+str(pixtemp))
         purge = not bool((cnt + 1) % PURGE_COUNTER)
 
-        mesh.evolve(pixtemp, percentage=0.02, purge=purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
+        mesh.evolve(pixtemp, percentage=0.05, purge=purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
         if purge:
             print("Purging points: "+str(len(mesh.points)) + " points")
 

@@ -186,6 +186,7 @@ class Mesh(object):
     def triangulate(self, parallel=True):
         self.delaunay()
         self.colorize_stack(parallel)
+        self
 
     @profile
     def evolve(self, temp, percentage=0.1, purge=False, maxerr=2000, minerr=500, parallel=True):
@@ -197,7 +198,6 @@ class Mesh(object):
         self.triangulate(parallel)
         new_error = self.error
 
-        print("errors:", old_error/new_error)
         if old_error > new_error:
             map(lambda x: x.accept(), sample_points)
         else:
