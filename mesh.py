@@ -43,6 +43,7 @@ class Mesh(object):
         self._triangle_cache = LRUCache(self._CACHE_SIZE)
 
         self._triangulation = None
+        self._old_triangulation = None
         self._randomize()
 
         self.triangulate(parallel)
@@ -110,15 +111,6 @@ class Mesh(object):
         self.add_point(point)
         return point
 
-    @profile
-    def update_errors(self):
-        for p in self.points:
-            p.error = 0
-        for i, tr_index in enumerate(self._triangulation.simplices):
-            err = self.get_result_at(i)[1]
-            for p_i in tr_index:
-                self.points[p_i].error += err
-
     def get_triangle(self, point_indices):
         """
         Gets the coordinates of the triangle from indices of three points in self.points
@@ -174,9 +166,11 @@ class Mesh(object):
         y = np.array([p.y for p in self.points])
         self._triangles = deque()
 
+        self._old_triangulation = np.copy(self._triangulation)
+
         try:
             self._triangulation = DelaunayXY(x, y)
-        except Exception:
+        except RuntimeError("Triangulation failed."):
             pass
 
         if len(self._triangulation.simplices) > self._CACHE_SIZE:
@@ -192,21 +186,24 @@ class Mesh(object):
     def triangulate(self, parallel=True):
         self.delaunay()
         self.colorize_stack(parallel)
-        self.update_errors()
 
     @profile
-    def evolve(self, temp, purge=False, maxerr=2000, minerr=500, parallel=True):
-        for p in self.points:
-            p.shift(temp)
+    def evolve(self, temp, percentage=0.1, purge=False, maxerr=2000, minerr=500, parallel=True):
+        old_error = self.error
+
+        sample_points = sample(self.points, int(len(self.points) * percentage))
+        for point in sample_points:
+            point.shift(temp)
+        self.triangulate(parallel)
+        new_error = self.error
+
+        print("errors:", old_error/new_error)
+        if old_error > new_error:
+            map(lambda x: x.accept(), sample_points)
+        else:
+            map(lambda x: x.reset(), sample_points)
 
         self.triangulate(parallel)
-
-        for p in self.points:
-            p.evaluate()
-
-        self.triangulate()
-        for p in self.points:
-            p.accept_error()
 
         if purge:
             self.ordered_purge(0.1, maxerr, minerr)

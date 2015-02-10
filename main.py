@@ -11,15 +11,17 @@ import cv2
 import numpy as np
 from time import time
 
-IMAGE_URI       = 'images/renoir.jpg'
-STARTING_POINTS = 100
+IMAGE_URI       = 'images/lion.jpg'
+STARTING_POINTS = 500
 TEMPERATURE     = 30
-TEMP_MULTIPLIER = 0.997
-MAX_ERR         = 10**6
+TEMP_MULTIPLIER = 0.999
+MAX_ERR         = 10**5
 MIN_ERR         = 10**5
-PURGE_COUNTER   = 30
+PURGE_COUNTER   = 10*100
 PARALLEL        = True
-PRINT_COUNTER   = 10
+PRINT           = True
+PRINT_COUNTER   = 30
+PRINT_TIME      = False
 
 # region needed so that @profile doesn't cause an error
 import __builtin__
@@ -50,6 +52,7 @@ def main():
     plotter.plot_mesh_collection(col)
     past = time()
 
+
     pixtemp = TEMPERATURE  # pixels radius
 
     for cnt in range(10**6):
@@ -57,28 +60,31 @@ def main():
         print("Temperature: "+str(pixtemp))
         purge = not bool((cnt + 1) % PURGE_COUNTER)
 
-        mesh.evolve(pixtemp, purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
+        mesh.evolve(pixtemp, percentage=0.02, purge=purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
         if purge:
             print("Purging points: "+str(len(mesh.points)) + " points")
 
-        print()
+        # print()
         from SApoint import SApoint
-        print(SApoint.switched, SApoint.notswitched)
+        # print(SApoint.switched, SApoint.notswitched)
 
         pixtemp *= TEMP_MULTIPLIER
 
-        now = time()
-        print("Time elapsed: ", now - past)
-        past = now
+        # region print time
+        if PRINT_TIME:
+            now = time()
+            print("Time elapsed: ", now - past)
+            past = now
+        #endregion
+
+        plotter.plot_global_errors(mesh.error)
 
         if (cnt % PRINT_COUNTER == (PRINT_COUNTER - 1)):
-            plotter.plot_global_errors(mesh.error)
 
             col = FlatMeshCollection(mesh)
             # plotter.plot_points(mesh)
             # plotter.plot_arrow(mesh)
             plotter.plot_mesh_collection(col)
-            mesh.update_errors()
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 
     plotter.keep_plot_open()
