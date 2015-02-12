@@ -186,7 +186,7 @@ class Mesh(object):
     def triangulate(self, parallel=True):
         self.delaunay()
         self.colorize_stack(parallel)
-        self
+        self.update_err
 
     @profile
     def evolve(self, temp, percentage=0.1, purge=False, maxerr=2000, minerr=500, parallel=True):

@@ -11,18 +11,6 @@ import cv2
 import numpy as np
 from time import time
 
-IMAGE_URI       = 'images/renoir.jpg'
-STARTING_POINTS = 200
-TEMPERATURE     = 300
-TEMP_MULTIPLIER = 0.995
-MAX_ERR         = 10**6
-MIN_ERR         = 10**6
-PURGE_COUNTER   = 50**100
-PARALLEL        = True
-PRINT           = True
-PRINT_COUNTER   = 30
-PRINT_TIME      = False
-
 # region needed so that @profile doesn't cause an error
 import __builtin__
 
@@ -33,6 +21,8 @@ except AttributeError:
     def profile(func): return func
     __builtin__.profile = profile
 # endregion
+
+from settings.renoir_settings import *
 
 @profile
 def main():
