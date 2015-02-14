@@ -22,7 +22,7 @@ except AttributeError:
     __builtin__.profile = profile
 # endregion
 
-from settings.renoir_settings import *
+from settings.christmas_settings import *
 
 @profile
 def main():
@@ -47,33 +47,24 @@ def main():
 
     for cnt in range(10**6):
 
-        print("Temperature: "+str(pixtemp))
         purge = not bool((cnt + 1) % PURGE_COUNTER)
-
-        mesh.evolve(pixtemp, percentage=0.05, purge=purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
-        if purge:
-            print("Purging points: "+str(len(mesh.points)) + " points")
-
-        # print()
-        from SApoint import SApoint
-        # print(SApoint.switched, SApoint.notswitched)
-
+        mesh.evolve(pixtemp, percentage=POINT_SHIFT_PERCENTAGE, purge=purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
         pixtemp *= TEMP_MULTIPLIER
 
         # region print time
-        if PRINT_TIME:
+        if PRINT_CONSOLE:
+            print("Temperature: "+str(pixtemp))
             now = time()
             print("Time elapsed: ", now - past)
             past = now
         #endregion
 
-        plotter.plot_global_errors(mesh.error)
 
         if (cnt % PRINT_COUNTER == (PRINT_COUNTER - 1)):
-
+            plotter.plot_global_errors(mesh.error)
             col = FlatMeshCollection(mesh)
-            # plotter.plot_points(mesh)
-            # plotter.plot_arrow(mesh)
+            plotter.plot_points(mesh)
+            plotter.plot_arrow(mesh)
             plotter.plot_mesh_collection(col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 

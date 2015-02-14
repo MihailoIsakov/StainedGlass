@@ -155,6 +155,7 @@ class Mesh(object):
             result = None
         return result
 
+    @profile
     def delaunay(self):
         """
         Triangulate the current points,
@@ -183,10 +184,19 @@ class Mesh(object):
             self.process_triangle(triangle)
 
     @profile
+    def update_errors(self):
+        for p in self.points:
+            p.error = 0
+        for i, tr_index in enumerate(self._triangulation.simplices):
+            err = self.get_result_at(i)[1]
+            for p_i in tr_index:
+                self.points[p_i].error += err
+
+    @profile
     def triangulate(self, parallel=True):
         self.delaunay()
         self.colorize_stack(parallel)
-        self.update_err
+        self.update_errors()
 
     @profile
     def evolve(self, temp, percentage=0.1, purge=False, maxerr=2000, minerr=500, parallel=True):
@@ -207,26 +217,10 @@ class Mesh(object):
 
         if purge:
             self.ordered_purge(0.1, maxerr, minerr)
-
-    def random_purge(self, sample_percentage, chance, maxerr, minerr):
-        self.triangulate()
-
-        sample_size = int(len(self.points) * sample_percentage)
-        for p in sample(self.points, sample_size):
-            if p.error < minerr:
-                if np.random.rand() < chance:
-                    self.remove_point(p)
-
-        sample_size = int(len(self.triangles) * sample_percentage)
-        for tr in sample(self.triangles, sample_size):
-            if self.get_triangle_error(tr) > maxerr:
-                if np.random.rand() < chance:
-                    self.split_triangle(tr)
+            self.triangulate(parallel)
 
     @profile
     def ordered_purge(self, decimate_percentage, maxerr, minerr, chance=0.3):
-        self.triangulate()
-
         point_dec = int(len(self.points) * decimate_percentage)
         triang_dec = int(len(self.triangles) * decimate_percentage)
 
@@ -243,8 +237,6 @@ class Mesh(object):
                 break  # in case even the worst triangles are within range, quit
             if np.random.rand() < chance:
                 self.split_triangle(triangle)
-
-        self.triangulate()
 
     @profile
     def colorize_stack(self, parallel=True):
