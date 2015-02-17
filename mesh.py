@@ -108,6 +108,7 @@ class Mesh(object):
         old_triangulation.colorize_stack(parallel)
         old_errors = old_triangulation.calculate_errors()
         old_image_error = np.sum(old_errors)
+        self._error = old_image_error
 
         # take a random number of points and shift them
         sample_points = sample(self.points, int(len(self.points) * percentage))

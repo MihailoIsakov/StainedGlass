@@ -64,7 +64,7 @@ def main():
 
 
         if (cnt % PRINT_COUNTER == (PRINT_COUNTER - 1)):
-            # plotter.plot_global_errors(mesh.error)
+            plotter.plot_global_errors(mesh._error)
             col = FlatMeshCollection(mesh._triangulation)
             plotter.plot_points(mesh)
             plotter.plot_arrow(mesh)

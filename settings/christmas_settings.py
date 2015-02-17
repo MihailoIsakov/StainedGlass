@@ -10,5 +10,5 @@ MIN_ERR                = 10**5
 PURGE_COUNTER          = 10**10
 PARALLEL               = True
 PRINT                  = True
-PRINT_COUNTER          = 1
+PRINT_COUNTER          = 10
 PRINT_CONSOLE          = True
