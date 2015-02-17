@@ -56,12 +56,12 @@ class MeshTest(unittest.TestCase):
     def test_get_existing_result(self):
         mesh = self.mesh
         self.fake_colorize()
-        c = mesh.get_result(mesh.triangles[-1])
+        c = mesh.nptriangle2result(mesh.triangles[-1])
         testing.assert_array_equal(c, mesh.triangles[-1])
 
     def test_get_nonexistent_result(self):
         mesh = self.mesh
-        self.assertRaises(KeyError, mesh.get_result, mesh.triangles[-1])
+        self.assertRaises(KeyError, mesh.nptriangle2result, mesh.triangles[-1])
 
     def fake_colorize(self):
         for tr in self.mesh.triangles:

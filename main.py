@@ -37,18 +37,21 @@ def main():
     mesh = Mesh(img, STARTING_POINTS, parallel=PARALLEL)
     mesh.triangulate(True)
 
-    col = FlatMeshCollection(mesh)
+    col = FlatMeshCollection(mesh._triangulation)
     plotter.start()
     plotter.plot_mesh_collection(col)
     past = time()
-
 
     pixtemp = TEMPERATURE  # pixels radius
 
     for cnt in range(10**6):
 
         purge = not bool((cnt + 1) % PURGE_COUNTER)
-        mesh.evolve(pixtemp, percentage=POINT_SHIFT_PERCENTAGE, purge=purge, maxerr=MAX_ERR, minerr=MIN_ERR, parallel=PARALLEL)
+        mesh.evolve(pixtemp,
+                    percentage=POINT_SHIFT_PERCENTAGE,
+                    purge=purge,
+                    maxerr=MAX_ERR, minerr=MIN_ERR,
+                    parallel=PARALLEL)
         pixtemp *= TEMP_MULTIPLIER
 
         # region print time
@@ -61,8 +64,8 @@ def main():
 
 
         if (cnt % PRINT_COUNTER == (PRINT_COUNTER - 1)):
-            plotter.plot_global_errors(mesh.error)
-            col = FlatMeshCollection(mesh)
+            # plotter.plot_global_errors(mesh.error)
+            col = FlatMeshCollection(mesh._triangulation)
             plotter.plot_points(mesh)
             plotter.plot_arrow(mesh)
             plotter.plot_mesh_collection(col)

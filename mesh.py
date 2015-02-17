@@ -1,17 +1,14 @@
 __author__ = 'zieghailo'
+
 import numpy as np
-from collections import deque
-
-
-from point import Point as BasePoint
-from SApoint import SApoint as Point
-from trimath import cv2_triangle_sum, rand_point_in_triangle, DelaunayXY
-from support.lru_cache import LRUCache
-
-# multiprocessing approach
-from multiprocessing import Pool
 from random import sample
 from heapq import nlargest, nsmallest
+
+from triangulation import *
+from point import Point as BasePoint
+from SApoint import SApoint as Point
+from trimath import rand_point_in_triangle
+
 
 
 # region needed so that @profile doesn't cause an error
@@ -33,17 +30,9 @@ class Mesh(object):
         self._img = img
         BasePoint.set_borders(img.shape[1], img.shape[0]) # for some reason shape gives us y, then x
 
-        # TODO maybe implement it as a linked list so that
-        # removing points from the middle and appending is faster?
         self._points = []
-        self._triangles = deque()
-
-        self._triangle_stack = deque()
-        self._CACHE_SIZE = 65536
-        self._triangle_cache = LRUCache(self._CACHE_SIZE)
 
         self._triangulation = None
-        self._old_triangulation = None
         self._randomize()
 
         self.triangulate(parallel)
@@ -69,35 +58,11 @@ class Mesh(object):
     def points(self):
         return self._points
 
-    @property
-    def triangles(self):
-        return self._triangles
-
-    @property
-    def colors(self):
-        # TODO can be optimized to check if the current version is still consistent
-        return [t.color for t in self.triangles]
-
-    @property
-    def point_errors(self):
-        return [p.error for p in self.points]
-
-    @property
-    def triangle_errors(self):
-        return [self.get_triangle_error(tr) for tr in self.triangles]
-
-    @property
-    def error(self):
-        err = np.sum(self.get_triangle_error(tr) for tr in self.triangles)
-        return err
     #endregion
 
     def remove_point(self, point):
         if not point._fixed:
             self.points.remove(point)
-
-    def add_point(self, new_point):
-        self.points.append(new_point)
 
     def split_triangle(self, triangle):
         """
@@ -108,118 +73,61 @@ class Mesh(object):
         [x, y] = rand_point_in_triangle(triangle)
 
         point = Point(x, y)
-        self.add_point(point)
+        self.points.append(point)
         return point
 
-    def get_triangle(self, point_indices):
-        """
-        Gets the coordinates of the triangle from indices of three points in self.points
-        :param point_indices: indices of three points in self.points
-        :return: 2x3 numpy array of triangle vertices coordinates
-        """
-        triangle = np.zeros([2, 3])
-        triangle[:, 0] = self.points[point_indices[0]].position
-        triangle[:, 1] = self.points[point_indices[1]].position
-        triangle[:, 2] = self.points[point_indices[2]].position
-        return triangle
+    def assign_neighbors(self):
 
-    def get_result(self, triangle):
-        try:
-            result = self._triangle_cache.get(triangle)
-        except KeyError:
-            return ((0, 1, 0), 0)
-            raise KeyError("The triangle was not previously colorized.")
-        return result
+        for verts in self._triangulation.simplices:
+            points = [self.points[x] for x in verts]
+            for p in points:
+                p.neighbors.update(set(points))
 
-    def get_result_at(self, triangle_index):
-        triangle = self.triangles[triangle_index]
-        return self.get_result(triangle)
+    def calc_triangulation_errors(self, triangulation):
+        for point in self.points:
+            error = 0
 
-    def get_triangle_color(self, triangle):
-        return self.get_result(triangle)[0]
+            for tri_ind, simplices in enumerate(triangulation.simplices):
+                included = True
+                for vert in simplices:
+                    if vert not in point.neighbors:
+                        included = False
+                        break
+                if included:
+                    error += self.nptriangle2result(self.points2nptriangle(simplices))[1]
+            # print error
 
-    def get_triangle_error(self, triangle):
-        return self.get_result(triangle)[1]
-
-    def process_triangle(self, triangle):
-        """
-        Lookup the color/error of the triangle. If the result has already been calculated,
-        return it. Otherwise, add it to the triangle stack and return None.
-        :param triangle: 2x3 numpy array of the triangles coordinates.
-        :return: color and error tuple if the result was calculated before, otherwise None.
-        """
-        try:
-            result = self._triangle_cache.get(triangle)
-        except KeyError:
-            self._triangle_stack.append(triangle)
-            result = None
-        return result
-
-    @profile
-    def delaunay(self):
-        """
-        Triangulate the current points,
-        add the triangle numpy arrays to self.triangles,
-        salvage results from the cache,
-        add missing results to the stack.
-        """
-        x = np.array([p.x for p in self.points])
-        y = np.array([p.y for p in self.points])
-        self._triangles = deque()
-
-        self._old_triangulation = np.copy(self._triangulation)
-
-        try:
-            self._triangulation = DelaunayXY(x, y)
-        except RuntimeError("Triangulation failed."):
-            pass
-
-        if len(self._triangulation.simplices) > self._CACHE_SIZE:
-            raise MemoryError("Cache is not smaller than the number of triangles in the mesh.")
-
-        # goes through the triangles and sifts the new ones out, throws them on the stack
-        for i, t in enumerate(self._triangulation.simplices):
-            triangle = self.get_triangle(t)
-            self._triangles.append(triangle)
-            self.process_triangle(triangle)
-
-    @profile
-    def update_errors(self):
-        for p in self.points:
-            p.error = 0
-        for i, tr_index in enumerate(self._triangulation.simplices):
-            err = self.get_result_at(i)[1]
-            for p_i in tr_index:
-                self.points[p_i].error += err
-
-    @profile
     def triangulate(self, parallel=True):
-        self.delaunay()
-        self.colorize_stack(parallel)
-        self.update_errors()
+        self._triangulation = Triangulation(self.points)
+        self._triangulation.colorize_stack(parallel)
+        self._triangulation.calculate_errors(True)
 
-    @profile
     def evolve(self, temp, percentage=0.1, purge=False, maxerr=2000, minerr=500, parallel=True):
-        old_error = self.error
+        old_triangulation = Triangulation(self.points)
+        self._triangulation = old_triangulation
+        old_triangulation.colorize_stack(parallel)
+        old_errors = old_triangulation.calculate_errors()
+        old_image_error = np.sum(old_errors)
 
+        # take a random number of points and shift them
         sample_points = sample(self.points, int(len(self.points) * percentage))
         for point in sample_points:
             point.shift(temp)
-        self.triangulate(parallel)
-        new_error = self.error
 
-        if old_error > new_error:
+        new_triangulation = Triangulation(self.points)
+        new_triangulation.colorize_stack(parallel)
+        new_errors = new_triangulation.calculate_errors()
+        new_image_error = np.sum(new_errors)
+
+        if old_image_error > new_image_error:
             map(lambda x: x.accept(), sample_points)
         else:
             map(lambda x: x.reset(), sample_points)
-
-        self.triangulate(parallel)
 
         if purge:
             self.ordered_purge(0.1, maxerr, minerr)
             self.triangulate(parallel)
 
-    @profile
     def ordered_purge(self, decimate_percentage, maxerr, minerr, chance=0.3):
         point_dec = int(len(self.points) * decimate_percentage)
         triang_dec = int(len(self.triangles) * decimate_percentage)
@@ -237,31 +145,6 @@ class Mesh(object):
                 break  # in case even the worst triangles are within range, quit
             if np.random.rand() < chance:
                 self.split_triangle(triangle)
-
-    @profile
-    def colorize_stack(self, parallel=True):
-        if not parallel:
-            while len(self._triangle_stack) > 0:
-                triangle = self._triangle_stack.pop()
-
-                # triangle sum should have image as a global variable
-                result = cv2_triangle_sum(triangle)
-
-                self._triangle_cache.set(triangle, result)
-            if len(self._triangle_stack) != 0:
-                raise AssertionError("Stack not fully colored")
-        else:
-            pool = Pool(processes=8)
-            triangles = list(self._triangle_stack)
-            results = pool.map(cv2_triangle_sum, triangles)
-
-            pool.close()
-            pool.join()
-
-            for triangle, res in zip(self._triangle_stack, results):
-                self._triangle_cache.set(triangle, res)
-
-            self._triangle_stack.clear()
 
     def is_consistent(self):
         cons = True

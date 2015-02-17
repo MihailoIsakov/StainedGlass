@@ -3,6 +3,8 @@ from matplotlib.collections import PatchCollection
 from matplotlib.patches import Polygon
 from collections import deque
 
+from triangulation import nptriangle2result
+
 class MeshCollection(PatchCollection):
 
     def __init__(self, triangles, colors):
@@ -29,7 +31,7 @@ class FlatMeshCollection(PatchCollection):
         for tr in mesh.triangles:
             patches.append(Polygon(tr.transpose()))
             try:
-                colors.append(mesh.get_result(tr)[0])
+                colors.append(nptriangle2result(tr)[0])
             except KeyError:
                 colors.append((0,1,0))
 
