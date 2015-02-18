@@ -22,7 +22,7 @@ except AttributeError:
     __builtin__.profile = profile
 # endregion
 
-from settings.christmas_settings import *
+from settings.renoir_settings import *
 
 @profile
 def main():

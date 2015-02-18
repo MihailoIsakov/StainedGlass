@@ -109,13 +109,13 @@ class Mesh(object):
         old_triangulation.assign_neighbors()
 
         self._error = old_triangulation.calculate_global_error()
-        # old_errors = old_triangulation.calculate_errors()
-        # old_image_error = np.sum(old_errors)
-        # self._error = old_image_error
 
-        # take a random number of points and shift them
-        sample_points = sample(self.points, int(len(self.points) * percentage))
-        for point in sample_points:
+        # # take a random number of points and shift them
+        # sample_points = sample(self.points, int(len(self.points) * percentage))
+        # for point in sample_points:
+        #     point.shift(temp)
+
+        for point in self.points:
             point.shift(temp)
 
         new_triangulation = Triangulation(self.points)
@@ -125,6 +125,7 @@ class Mesh(object):
         # new_errors = new_triangulation.calculate_errors()
         # new_image_error = np.sum(new_errors)
 
+        print len(self.points[0].neighbors)
         for point in self.points:
             old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
             old_error = 0
@@ -140,6 +141,8 @@ class Mesh(object):
                 point.accept()
             else:
                 point.reset()
+
+            point.neighbors = set()
 
         if purge:
             self.ordered_purge(0.1, maxerr, minerr)
