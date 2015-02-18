@@ -27,17 +27,22 @@ def plot_mesh_collection(collection):
     plt.draw()
 
 
-def draw_mesh(mesh):
-    global imagePlot
-    mesh.build_collection()
-    pcol = mesh.collection
-    pcol.set_linewidth(0)
-    pcol.set_color(mesh.colors)
-    imagePlot.add_collection(pcol)
-    imagePlot.autoscale_view()
-    imagePlot.axis('equal')
-    plt.draw()
-    return imagePlot
+def plot_original(img, alpha):
+    plt.figure(1)
+    plt.imshow(img, alpha=alpha)
+
+
+# def draw_mesh(mesh):
+#     global imagePlot
+#     mesh.build_collection()
+#     pcol = mesh.collection
+#     pcol.set_linewidth(0)
+#     pcol.set_color(mesh.colors)
+#     imagePlot.add_collection(pcol)
+#     imagePlot.autoscale_view()
+#     imagePlot.axis('equal')
+#     plt.draw()
+#     return imagePlot
 
 oldx = None
 oldy = None
@@ -90,6 +95,7 @@ def keep_plot_open():
 def plot_matrix(mat):
     plt.matshow(mat)
     plt.show()
+
 
 def plot_error_hist(perr, trerr):
     pyl.figure(3)

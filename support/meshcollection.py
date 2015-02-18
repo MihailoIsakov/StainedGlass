@@ -25,13 +25,13 @@ class FlatMeshCollection(PatchCollection):
     """
     Like MeshCollection, but works with plain numpy arrays instead of Triangle objects
     """
-    def __init__(self, mesh):
+    def __init__(self, mesh, alpha=1):
         patches = deque()
         colors = deque()
         for tr in mesh.triangles:
             patches.append(Polygon(tr.transpose()))
             try:
-                colors.append(nptriangle2result(tr)[0])
+                colors.append(nptriangle2result(tr)[0] + (alpha,))
             except KeyError:
                 colors.append((0,1,0))
 

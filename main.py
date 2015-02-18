@@ -12,7 +12,7 @@ import numpy as np
 from time import time
 
 from support.profiler_fix import *
-from settings.renoir_settings import *
+from settings.christmas_settings import *
 
 @profile
 def main():
@@ -27,8 +27,9 @@ def main():
     mesh = Mesh(img, STARTING_POINTS, parallel=PARALLEL)
     mesh.triangulate(True)
 
-    col = FlatMeshCollection(mesh._triangulation)
+    col = FlatMeshCollection(mesh._triangulation, alpha=TRIANGLE_ALPHA)
     plotter.start()
+    plotter.plot_original(img, 1 - TRIANGLE_ALPHA)
     plotter.plot_mesh_collection(col)
     past = time()
 
@@ -40,7 +41,7 @@ def main():
         # In the beginning when pixtemp is almost TEMPERATURE,
         # the chance to purge is high. As the temperature gets lower,
         # the chance to purge approaches zero.
-        purge = np.random.rand() < pixtemp / TEMPERATURE
+        purge = np.random.rand() * PURGE_MULTIPLIER < pixtemp / TEMPERATURE
 
         mesh.evolve(pixtemp,
                     purge=purge,
@@ -59,9 +60,11 @@ def main():
             plotter.plot_global_errors(mesh._error)
 
         if (cnt % PRINT_COUNTER == (PRINT_COUNTER - 1)):
-            col = FlatMeshCollection(mesh._triangulation)
+            print TRIANGLE_ALPHA
+            col = FlatMeshCollection(mesh._triangulation, alpha=TRIANGLE_ALPHA)
             plotter.plot_points(mesh)
             plotter.plot_arrow(mesh)
+            plotter.plot_original(img, 1 - TRIANGLE_ALPHA)
             plotter.plot_mesh_collection(col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 
