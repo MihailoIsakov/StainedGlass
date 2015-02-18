@@ -11,17 +11,7 @@ import cv2
 import numpy as np
 from time import time
 
-# region needed so that @profile doesn't cause an error
-import __builtin__
-
-try:
-    __builtin__.profile
-except AttributeError:
-    # No line profiler, provide a pass-through version
-    def profile(func): return func
-    __builtin__.profile = profile
-# endregion
-
+from support.profiler_fix import *
 from settings.renoir_settings import *
 
 @profile
@@ -44,9 +34,14 @@ def main():
 
     pixtemp = TEMPERATURE  # pixels radius
 
-    for cnt in range(10**6):
+    for cnt in range(10 ** 6):
 
-        purge = not bool((cnt + 1) % PURGE_COUNTER)
+        # The chance to purge points.
+        # In the beginning when pixtemp is almost TEMPERATURE,
+        # the chance to purge is high. As the temperature gets lower,
+        # the chance to purge approaches zero.
+        purge = np.random.rand() < pixtemp / TEMPERATURE
+
         mesh.evolve(pixtemp,
                     purge=purge,
                     parallel=PARALLEL)

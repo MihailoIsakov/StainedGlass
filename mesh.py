@@ -102,6 +102,7 @@ class Mesh(object):
         self._triangulation.colorize_stack(parallel)
         self._triangulation.calculate_triangle_errors()
 
+    @profile
     def evolve(self, temp, purge=False, parallel=True):
         old_triangulation = Triangulation(self.points)
         self._triangulation = old_triangulation
@@ -139,6 +140,7 @@ class Mesh(object):
         if purge:
             self.slow_purge()
 
+    @profile
     def slow_purge(self):
         point_errors = self._triangulation.calculate_point_errors()
         mn = np.argmin(point_errors[4:])
@@ -147,24 +149,3 @@ class Mesh(object):
         triangle_errors = self._triangulation.calculate_triangle_errors()
         mx = np.argmax(triangle_errors)
         self.split_triangle(self._triangulation._triangles[mx])
-
-    def ordered_purge(self, decimate_percentage, maxerr, minerr, chance=0.3):
-        point_dec = int(len(self.points) * decimate_percentage)
-        triang_dec = int(len(self._triangulation.triangles) * decimate_percentage)
-
-        smallest = nsmallest(point_dec, self.points, lambda x: x.error)
-        for point in smallest:
-            if point.error > minerr:
-                break  # in case even the worst points are within range, quit
-            if np.random.rand() < chance:
-                self.remove_point(point)
-
-        # largest = nlargest(triang_dec, self._triangulation.triangles, lambda x: self._triangulation.get_triangle_error(x))
-        # for triangle in largest:
-        #     if self.get_triangle_error(triangle) < maxerr:
-        #         break  # in case even the worst triangles are within range, quit
-        #     if np.random.rand() < chance:
-        #         self.split_triangle(triangle)
-
-
-
