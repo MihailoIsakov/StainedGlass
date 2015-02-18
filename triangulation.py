@@ -104,6 +104,26 @@ class Triangulation():
 
             self._triangle_stack.clear()
 
+    def assign_neighbors(self):
+        for verts in self.delaunay.simplices:
+            points = [self.points[x] for x in verts]
+            for p in points:
+                p.neighbors.update(set(verts))
+
+    def find_triangles_with_indices(self, neighbors):
+        """
+        Finds all the triangles in self.delaunay
+        with indices in neighbors.
+        :param neighbors: The indices of points
+        :return: triangles with indices in neighbors
+        """
+        triangles = []
+        for tr in self.delaunay.simplices:
+            is_in = np.array([el in neighbors for el in tr]).all()
+            if is_in:
+                triangles.append(tr)
+        return triangles
+
     def calculate_errors(self, assign_errors=False):
         errors = np.zeros(len(self._triangles))
 
@@ -117,6 +137,14 @@ class Triangulation():
                 self.points[i].error = errors[i]
 
         return errors
+
+    def calculate_global_error(self):
+        error = 0
+
+        for trind in self.delaunay.simplices:
+            error += nptriangle2error(self.points2nptriangle(trind))
+
+        return error
 
     def points2nptriangle(self, point_indices):
         """

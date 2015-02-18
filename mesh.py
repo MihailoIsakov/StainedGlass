@@ -106,9 +106,12 @@ class Mesh(object):
         old_triangulation = Triangulation(self.points)
         self._triangulation = old_triangulation
         old_triangulation.colorize_stack(parallel)
-        old_errors = old_triangulation.calculate_errors()
-        old_image_error = np.sum(old_errors)
-        self._error = old_image_error
+        old_triangulation.assign_neighbors()
+
+        self._error = old_triangulation.calculate_global_error()
+        # old_errors = old_triangulation.calculate_errors()
+        # old_image_error = np.sum(old_errors)
+        # self._error = old_image_error
 
         # take a random number of points and shift them
         sample_points = sample(self.points, int(len(self.points) * percentage))
@@ -117,13 +120,26 @@ class Mesh(object):
 
         new_triangulation = Triangulation(self.points)
         new_triangulation.colorize_stack(parallel)
-        new_errors = new_triangulation.calculate_errors()
-        new_image_error = np.sum(new_errors)
+        new_triangulation.assign_neighbors()
 
-        if old_image_error > new_image_error:
-            map(lambda x: x.accept(), sample_points)
-        else:
-            map(lambda x: x.reset(), sample_points)
+        # new_errors = new_triangulation.calculate_errors()
+        # new_image_error = np.sum(new_errors)
+
+        for point in self.points:
+            old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
+            old_error = 0
+            for tr in old_triangles:
+                old_error += nptriangle2error(old_triangulation.points2nptriangle(tr))
+
+            new_triangles = new_triangulation.find_triangles_with_indices(point.neighbors)
+            new_error = 0
+            for tr in new_triangles:
+                new_error += nptriangle2error(old_triangulation.points2nptriangle(tr))
+
+            if new_error < old_error:
+                point.accept()
+            else:
+                point.reset()
 
         if purge:
             self.ordered_purge(0.1, maxerr, minerr)
