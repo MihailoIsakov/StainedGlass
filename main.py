@@ -22,7 +22,7 @@ except AttributeError:
     __builtin__.profile = profile
 # endregion
 
-from settings.christmas_settings import *
+from settings.renoir_settings import *
 
 @profile
 def main():
@@ -48,9 +48,7 @@ def main():
 
         purge = not bool((cnt + 1) % PURGE_COUNTER)
         mesh.evolve(pixtemp,
-                    percentage=POINT_SHIFT_PERCENTAGE,
                     purge=purge,
-                    maxerr=MAX_ERR, minerr=MIN_ERR,
                     parallel=PARALLEL)
         pixtemp *= TEMP_MULTIPLIER
 

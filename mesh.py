@@ -102,18 +102,13 @@ class Mesh(object):
         self._triangulation.colorize_stack(parallel)
         self._triangulation.calculate_triangle_errors()
 
-    def evolve(self, temp, percentage=0.1, purge=False, maxerr=2000, minerr=500, parallel=True):
+    def evolve(self, temp, purge=False, parallel=True):
         old_triangulation = Triangulation(self.points)
         self._triangulation = old_triangulation
         old_triangulation.colorize_stack(parallel)
         old_triangulation.assign_neighbors()
 
         self._error = old_triangulation.calculate_global_error()
-
-        # # take a random number of points and shift them
-        # sample_points = sample(self.points, int(len(self.points) * percentage))
-        # for point in sample_points:
-        #     point.shift(temp)
 
         for point in self.points:
             point.shift(temp)
@@ -122,7 +117,7 @@ class Mesh(object):
         new_triangulation.colorize_stack(parallel)
         new_triangulation.assign_neighbors()
 
-        print len(self.points)
+        print ("Point num: ", len(self.points))
         for point in self.points:
             old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
             old_error = 0
@@ -142,13 +137,9 @@ class Mesh(object):
             point.neighbors = set()
 
         if purge:
-            print "Purging"
             self.slow_purge()
 
     def slow_purge(self):
-        print([x._fixed for x in self.points[:5]])
-
-        print("Point num: ", len(self.points))
         point_errors = self._triangulation.calculate_point_errors()
         mn = np.argmin(point_errors[4:])
         self.remove_point(self.points[mn+4])
