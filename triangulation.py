@@ -124,8 +124,16 @@ class Triangulation():
                 triangles.append(tr)
         return triangles
 
-    def calculate_errors(self, assign_errors=False):
+    def calculate_triangle_errors(self):
         errors = np.zeros(len(self._triangles))
+
+        for i, triangle in enumerate(self._triangles):
+             errors[i] = nptriangle2error(triangle)
+
+        return errors
+
+    def calculate_point_errors(self, assign_errors=False):
+        errors = np.zeros(len(self.points))
 
         for i, tr_index in enumerate(self.delaunay.simplices):
             err = self.trindex2result(i)[1]
@@ -139,12 +147,7 @@ class Triangulation():
         return errors
 
     def calculate_global_error(self):
-        error = 0
-
-        for trind in self.delaunay.simplices:
-            error += nptriangle2error(self.points2nptriangle(trind))
-
-        return error
+        return np.sum(self.calculate_triangle_errors())
 
     def points2nptriangle(self, point_indices):
         """

@@ -22,7 +22,7 @@ except AttributeError:
     __builtin__.profile = profile
 # endregion
 
-from settings.renoir_settings import *
+from settings.christmas_settings import *
 
 @profile
 def main():
@@ -62,7 +62,9 @@ def main():
             past = now
         #endregion
 
-        plotter.plot_global_errors(mesh._error)
+        if (cnt % PRINT_ERROR_COUNTER == 0):
+            plotter.plot_global_errors(mesh._error)
+
         if (cnt % PRINT_COUNTER == (PRINT_COUNTER - 1)):
             col = FlatMeshCollection(mesh._triangulation)
             plotter.plot_points(mesh)
