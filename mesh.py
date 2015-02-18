@@ -125,7 +125,7 @@ class Mesh(object):
         # new_errors = new_triangulation.calculate_errors()
         # new_image_error = np.sum(new_errors)
 
-        print len(self.points[0].neighbors)
+        print len(self.points[50].neighbors)
         for point in self.points:
             old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
             old_error = 0
@@ -135,7 +135,7 @@ class Mesh(object):
             new_triangles = new_triangulation.find_triangles_with_indices(point.neighbors)
             new_error = 0
             for tr in new_triangles:
-                new_error += nptriangle2error(old_triangulation.points2nptriangle(tr))
+                new_error += nptriangle2error(new_triangulation.points2nptriangle(tr))
 
             if new_error < old_error:
                 point.accept()
