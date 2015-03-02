@@ -102,40 +102,87 @@ class Mesh(object):
         self._triangulation.colorize_stack(parallel)
         self._triangulation.calculate_triangle_errors()
 
+    @staticmethod
+    def sort_by_neighbors(points):
+        """
+        In order to assign the triangles to the right neighborhoods in linear time,
+        we need to follow through each points neighbors, and create a list of lists
+        pointing back.
+        :param points: list of points from the mesh
+        :return: list of points pointing to this point
+        """
+        nb_list = [[]] * len(points)  # the neighbor list to be returned
+        for i, p in enumerate(points):
+            for n in p.neighbors:
+                nb_list[i].append(n)
+        return nb_list
+
     @profile
     def evolve(self, temp, purge=False, parallel=True):
+        """
+        Moves the points around randomly, keeping the changes that reduce errors,
+        and reverting those that don't. Each evolve cycle the whole image is retruangulated
+        and repainted twice.
+        :param temp: The temperature of the simulated annealing, representing max pixel jump.
+        :param purge: Bool specifying if any points should be added and removed this turn.
+        :param parallel: Bool specifying if the colorization should be parallel.
+        """
+        # create a control triangulation, calculate the colors and the errors
         old_triangulation = Triangulation(self.points)
         self._triangulation = old_triangulation
         old_triangulation.colorize_stack(parallel)
+
+        # assign neighbors to each point
         old_triangulation.assign_neighbors()
 
+        # calculate the error of the triangulation, used for plotting purposes only
         self._error = old_triangulation.calculate_global_error()
 
+        # move the points around, distance depending on the annealing temperature
         for point in self.points:
             point.shift(temp)
 
+        # calculate the new triangulation, colors and errors
         new_triangulation = Triangulation(self.points)
         new_triangulation.colorize_stack(parallel)
+
+        # add the new neighbors to the old ones
         new_triangulation.assign_neighbors()
 
-        print ("Point num: ", len(self.points))
-        for point in self.points:
-            old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
-            old_error = 0
-            for tr in old_triangles:
-                old_error += nptriangle2error(old_triangulation.points2nptriangle(tr))
+        nb_list = self.sort_by_neighbors(self.points)
 
-            new_triangles = new_triangulation.find_triangles_with_indices(point.neighbors)
-            new_error = 0
-            for tr in new_triangles:
-                new_error += nptriangle2error(new_triangulation.points2nptriangle(tr))
+        old_triangulation.assign_errors(nb_list)
+        old_errors = [p.error for p in self.points]
 
-            if new_error < old_error:
-                point.accept()
+        new_triangulation.assign_errors(nb_list)
+        new_errors = [p.error for p in self.points]
+
+        for i, p in enumerate(self.points):
+            if old_errors[i] > new_errors[i]:
+                p.accept()
             else:
-                point.reset()
+                p.reset()
 
-            point.neighbors = set()
+            p.neighbors = set()
+
+        # # simulated annealing magic. Find which points to reset, and which to keep as they are.
+        # for point in self.points:
+        #     old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
+        #     old_error = 0
+        #     for tr in old_triangles:
+        #         old_error += nptriangle2error(old_triangulation.points2nptriangle(tr))
+        #
+        #     new_triangles = new_triangulation.find_triangles_with_indices(point.neighbors)
+        #     new_error = 0
+        #     for tr in new_triangles:
+        #         new_error += nptriangle2error(new_triangulation.points2nptriangle(tr))
+        #
+        #     if new_error < old_error:
+        #         point.accept()
+        #     else:
+        #         point.reset()
+        #
+        #     point.neighbors = set()
 
         if purge:
             self.slow_purge()

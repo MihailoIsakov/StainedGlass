@@ -133,6 +133,18 @@ class Triangulation():
                 triangles.append(tr)
         return triangles
 
+    def assign_errors(self, nb_list):
+        for p in self.points:
+            p.error = 0
+
+        for tr in self.delaunay.simplices:
+            responsive_points = set.intersection(self.points[tr[0]].neighbors,
+                                                 self.points[tr[1]].neighbors,
+                                                 self.points[tr[2]].neighbors)
+            error = nptriangle2error(self.points2nptriangle(tr))
+            for pi in responsive_points:
+                self.points[pi].error += error
+
     def calculate_triangle_errors(self):
         errors = np.zeros(len(self._triangles))
 

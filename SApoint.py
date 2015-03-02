@@ -13,6 +13,7 @@ class SApoint(Point):
         Point.__init__(self, x, y, is_fixed=is_fixed)
         self._oldposition = np.copy(self.position)
         self.neighbors = set()
+        self.error = 0
 
     def shift(self, pixtemp):
         if self._fixed:

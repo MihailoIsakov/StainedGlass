@@ -31,8 +31,8 @@ def main(C):
     plotter.start()
     plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
     plotter.plot_mesh_collection(col)
-    past = time()
 
+    past = time()
     pixtemp = C.TEMPERATURE  # pixels radius
 
     for cnt in range(10 ** 6):
