@@ -77,6 +77,7 @@ def parse_arguments(default_settings):
                                      description='Create a low poly version '
                                                  'of a given image.')
     parser.add_argument('IMAGE_URI')
+    parser.add_argument('FOCUS_MAP', nargs='?')
     parser.add_argument('-t', '--temperature', type=float, dest='TEMPERATURE')
     parser.add_argument('-p', '--points',      type=int,   dest='STARTING_POINTS')
     parser.add_argument('-m', '--multiplier',  type=float, dest='TEMP_MULTIPLIER')
