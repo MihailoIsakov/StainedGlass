@@ -22,9 +22,20 @@ def set_image(np.ndarray[np.uint8_t, ndim=3] img):
     global IMAGE
     IMAGE = img
 
+
+def set_heuristic(np.ndarray[np.uint16_t, ndim=2] img)
+    global HEURISTIC
+    HEURISTIC = img
+
+
 cdef np.ndarray[np.uint8_t, ndim=3] get_image():
     global IMAGE
     return IMAGE
+
+
+cdef np.ndarray[np.uint16_t, ndim=2] get_heuristic():
+    global HEURISTIC
+    return HEURISTIC
 
 
 def DelaunayXY(x, y):

@@ -22,6 +22,12 @@ def main(C):
     cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
 #    img = np.flipud(img)
 
+    if C.HEURISTIC_URI is not '':
+        import img2heur
+        heuristic = img2heur.load_heur_image(C.HEURISTIC_URI)
+    else:
+        heuristic = np.ones(img.shape[:2])
+
     trimath.set_image(img)
 
     mesh = Mesh(img, C.STARTING_POINTS, parallel=C.PARALLEL)
@@ -62,8 +68,8 @@ def main(C):
         if (cnt % C.PRINT_COUNTER == (C.PRINT_COUNTER - 1)):
             print C.TRIANGLE_ALPHA
             col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
-            #plotter.plot_points(mesh)
-            #plotter.plot_arrow(mesh)
+            plotter.plot_points(mesh)
+            plotter.plot_arrow(mesh)
             plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
             plotter.plot_mesh_collection(col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
@@ -77,9 +83,11 @@ def parse_arguments(default_settings):
                                      description='Create a low poly version '
                                                  'of a given image.')
     parser.add_argument('IMAGE_URI')
+    parser.add_argument('-he', '--heuristic',  type=str,   dest='HEURISTIC_URI')
     parser.add_argument('-t', '--temperature', type=float, dest='TEMPERATURE')
     parser.add_argument('-p', '--points',      type=int,   dest='STARTING_POINTS')
     parser.add_argument('-m', '--multiplier',  type=float, dest='TEMP_MULTIPLIER')
+    parser.add_argument('--purge',             type=float, dest='PURGE_MULTIPLIER')
     parser.add_argument('-c', '--console',     type=bool,  dest='PRINT_CONSOLE')
     parser.add_argument('-d', '--draw',        type=int,   dest='PRINT_COUNTER')
     parser.add_argument('-a', '--alpha',       type=float, dest='TRIANGLE_ALPHA')
@@ -89,10 +97,6 @@ def parse_arguments(default_settings):
 
 if __name__ == "__main__":
     from settings.default_settings import C
-
     settings = parse_arguments(C)
-
-    print(settings)
-    print C
 
     main(C)

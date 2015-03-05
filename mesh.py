@@ -111,10 +111,11 @@ class Mesh(object):
         :param points: list of points from the mesh
         :return: list of points pointing to this point
         """
-        nb_list = [[]] * len(points)  # the neighbor list to be returned
+        # nb_list = [set()] * len(points)  # the neighbor list to be returned
+        nb_list = [set() for _ in enumerate(points)]
         for i, p in enumerate(points):
             for n in p.neighbors:
-                nb_list[i].append(n)
+                nb_list[n].add(i)
         return nb_list
 
     @profile
@@ -133,7 +134,7 @@ class Mesh(object):
         old_triangulation.colorize_stack(parallel)
 
         # assign neighbors to each point
-        old_triangulation.assign_neighbors()
+        old_triangulation.assign_neighbors(self.points)
 
         # calculate the error of the triangulation, used for plotting purposes only
         self._error = old_triangulation.calculate_global_error()
@@ -147,49 +148,36 @@ class Mesh(object):
         new_triangulation.colorize_stack(parallel)
 
         # add the new neighbors to the old ones
-        new_triangulation.assign_neighbors()
+        new_triangulation.assign_neighbors(self.points)
 
+        # list of lists, each element i consists of points who have the neighbor point[i]
         nb_list = self.sort_by_neighbors(self.points)
 
-        old_triangulation.assign_errors(nb_list)
+        old_triangulation.assign_errors(self.points, nb_list)
         old_errors = [p.error for p in self.points]
 
-        new_triangulation.assign_errors(nb_list)
+        new_triangulation.assign_errors(self.points, nb_list)
         new_errors = [p.error for p in self.points]
 
+        acc=0
+        res=0
         for i, p in enumerate(self.points):
             if old_errors[i] > new_errors[i]:
+                acc+=1
                 p.accept()
             else:
+                res+=1
                 p.reset()
 
             p.neighbors = set()
 
-        # # simulated annealing magic. Find which points to reset, and which to keep as they are.
-        # for point in self.points:
-        #     old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
-        #     old_error = 0
-        #     for tr in old_triangles:
-        #         old_error += nptriangle2error(old_triangulation.points2nptriangle(tr))
-        #
-        #     new_triangles = new_triangulation.find_triangles_with_indices(point.neighbors)
-        #     new_error = 0
-        #     for tr in new_triangles:
-        #         new_error += nptriangle2error(new_triangulation.points2nptriangle(tr))
-        #
-        #     if new_error < old_error:
-        #         point.accept()
-        #     else:
-        #         point.reset()
-        #
-        #     point.neighbors = set()
-
+        print(acc, res)
         if purge:
             self.slow_purge()
 
     @profile
     def slow_purge(self):
-        point_errors = self._triangulation.calculate_point_errors()
+        point_errors = self._triangulation.calculate_point_errors(self.points)
         mn = np.argmin(point_errors[4:])
         self.remove_point(self.points[mn+4])
 

@@ -16,8 +16,8 @@ def nptriangle2result(triangle):
     try:
         result = cache.get(triangle)
     except KeyError:
-        return ((0, 1, 0), 0)
         raise KeyError("The triangle was not previously colorized.")
+        return ((0, 1, 0), 0)
     return result
 
 
@@ -44,7 +44,8 @@ class Triangulation():
         salvage results from the cache,
         add missing results to the stack.
         """
-        self.points = points
+        # self.points = points
+        self.positions = np.array([p.position for p in points])
         x = np.array([p.x for p in points])
         y = np.array([p.y for p in points])
 
@@ -95,7 +96,7 @@ class Triangulation():
             if len(self._triangle_stack) != 0:
                 raise AssertionError("Stack not fully colored")
         else:
-            pool = Pool(processes=8)
+            pool = Pool()
             triangles = list(self._triangle_stack)
             results = pool.map(cv2_triangle_sum, triangles)
             pool.close()
@@ -106,9 +107,15 @@ class Triangulation():
 
             self._triangle_stack.clear()
 
-    def assign_neighbors(self):
+    def assign_neighbors(self, current_points):
+        """
+        For the same points the triangulation is created, each point is updated with the list of neighbors
+        as specified by the triangulation
+        :param current_points: The list of points the triangulation is created with.
+        :return:
+        """
         for verts in self.delaunay.simplices:
-            points = [self.points[x] for x in verts]
+            points = [current_points[x] for x in verts]
             for p in points:
                 p.neighbors.update(set(verts))
 
@@ -133,17 +140,29 @@ class Triangulation():
                 triangles.append(tr)
         return triangles
 
-    def assign_errors(self, nb_list):
-        for p in self.points:
+    def assign_errors(self, points, nb_list):
+        """
+        Goes through the list of triangles in the current triangulation,
+        and assigns each triangle's error to all points that are responsible for it.
+        A point is responsible for a triangle if all the triangles vertices are in the
+        points neighbors set.
+        :param nb_list: list of all neighbors for a given point,
+        :return:
+        """
+        for p in points:
             p.error = 0
 
         for tr in self.delaunay.simplices:
-            responsive_points = set.intersection(self.points[tr[0]].neighbors,
-                                                 self.points[tr[1]].neighbors,
-                                                 self.points[tr[2]].neighbors)
+            responsible_points = set.intersection(nb_list[tr[0]],
+                                                  nb_list[tr[1]],
+                                                  nb_list[tr[2]])
             error = nptriangle2error(self.points2nptriangle(tr))
-            for pi in responsive_points:
-                self.points[pi].error += error
+            for pi in responsible_points:
+                points[pi].error += error
+
+        for p in points:
+            if p.error == 0:
+                pass
 
     def calculate_triangle_errors(self):
         errors = np.zeros(len(self._triangles))
@@ -153,8 +172,8 @@ class Triangulation():
 
         return errors
 
-    def calculate_point_errors(self, assign_errors=False):
-        errors = np.zeros(len(self.points))
+    def calculate_point_errors(self, points, assign_errors=False):
+        errors = np.zeros(len(points))
 
         for i, tr_index in enumerate(self.delaunay.simplices):
             err = self.trindex2result(i)[1]
@@ -162,8 +181,8 @@ class Triangulation():
                 errors[p_i] += err
 
         if assign_errors:
-            for i in range(len(self.points)):
-                self.points[i].error = errors[i]
+            for i in range(len(points)):
+                points[i].error = errors[i]
 
         return errors
 
@@ -177,9 +196,9 @@ class Triangulation():
         :return: 2x3 numpy array of triangle vertices coordinates
         """
         triangle = np.zeros([2, 3])
-        triangle[:, 0] = self.points[point_indices[0]].position
-        triangle[:, 1] = self.points[point_indices[1]].position
-        triangle[:, 2] = self.points[point_indices[2]].position
+        triangle[:, 0] = self.positions[point_indices[0]]
+        triangle[:, 1] = self.positions[point_indices[1]]
+        triangle[:, 2] = self.positions[point_indices[2]]
         return triangle
 
     def trindex2result(self, triangle_index):
