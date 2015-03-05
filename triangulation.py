@@ -140,29 +140,26 @@ class Triangulation():
                 triangles.append(tr)
         return triangles
 
-    def assign_errors(self, points, nb_list):
+    def neighborhood_errors(self, points, nb_list):
         """
         Goes through the list of triangles in the current triangulation,
         and assigns each triangle's error to all points that are responsible for it.
         A point is responsible for a triangle if all the triangles vertices are in the
         points neighbors set.
-        :param nb_list: list of all neighbors for a given point,
+        :param nb_list: each element in nb_list is a set of all the points who control that
+        points error. A points error is determined by all the points that come in contact
+        with it, (before and after the point shift) so we need to optimize all the teritory
+        those points control.
         :return:
         """
-        for p in points:
-            p.error = 0
+        errors = np.zeros(len(points))
 
         for tr in self.delaunay.simplices:
-            responsible_points = set.intersection(nb_list[tr[0]],
-                                                  nb_list[tr[1]],
-                                                  nb_list[tr[2]])
+            responsible_points = set.intersection(nb_list[tr[0]], nb_list[tr[1]], nb_list[tr[2]])
             error = nptriangle2error(self.points2nptriangle(tr))
             for pi in responsible_points:
-                points[pi].error += error
-
-        for p in points:
-            if p.error == 0:
-                pass
+                errors[pi] += error
+        return errors
 
     def calculate_triangle_errors(self):
         errors = np.zeros(len(self._triangles))

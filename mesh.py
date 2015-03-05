@@ -153,25 +153,17 @@ class Mesh(object):
         # list of lists, each element i consists of points who have the neighbor point[i]
         nb_list = self.sort_by_neighbors(self.points)
 
-        old_triangulation.assign_errors(self.points, nb_list)
-        old_errors = [p.error for p in self.points]
+        old_errors = old_triangulation.neighborhood_errors(self.points, nb_list)
+        new_errors = new_triangulation.neighborhood_errors(self.points, nb_list)
 
-        new_triangulation.assign_errors(self.points, nb_list)
-        new_errors = [p.error for p in self.points]
-
-        acc=0
-        res=0
         for i, p in enumerate(self.points):
             if old_errors[i] > new_errors[i]:
-                acc+=1
                 p.accept()
             else:
-                res+=1
                 p.reset()
 
             p.neighbors = set()
 
-        print(acc, res)
         if purge:
             self.slow_purge()
 
