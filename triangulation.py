@@ -157,6 +157,7 @@ class Triangulation():
         for tr in self.delaunay.simplices:
             responsible_points = set.intersection(nb_list[tr[0]], nb_list[tr[1]], nb_list[tr[2]])
             error = nptriangle2error(self.points2nptriangle(tr))
+            print len(responsible_points)
             for pi in responsible_points:
                 errors[pi] += error
         return errors

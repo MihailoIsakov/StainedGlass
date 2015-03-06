@@ -119,13 +119,12 @@ class Mesh(object):
         return nb_list
 
     @profile
-    def evolve(self, temp, purge=False, parallel=True):
+    def evolve(self, temp, parallel=True):
         """
         Moves the points around randomly, keeping the changes that reduce errors,
         and reverting those that don't. Each evolve cycle the whole image is retruangulated
         and repainted twice.
         :param temp: The temperature of the simulated annealing, representing max pixel jump.
-        :param purge: Bool specifying if any points should be added and removed this turn.
         :param parallel: Bool specifying if the colorization should be parallel.
         """
         # create a control triangulation, calculate the colors and the errors
@@ -148,7 +147,9 @@ class Mesh(object):
         new_triangulation.colorize_stack(parallel)
 
         # add the new neighbors to the old ones
+        print self.points[100].neighbors
         new_triangulation.assign_neighbors(self.points)
+        print self.points[100].neighbors
 
         # list of lists, each element i consists of points who have the neighbor point[i]
         nb_list = self.sort_by_neighbors(self.points)
@@ -157,15 +158,11 @@ class Mesh(object):
         new_errors = new_triangulation.neighborhood_errors(self.points, nb_list)
 
         for i, p in enumerate(self.points):
+            p.neighbors = set()
             if old_errors[i] > new_errors[i]:
                 p.accept()
             else:
                 p.reset()
-
-            p.neighbors = set()
-
-        if purge:
-            self.slow_purge()
 
     @profile
     def slow_purge(self):

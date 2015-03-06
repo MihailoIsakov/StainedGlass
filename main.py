@@ -42,17 +42,19 @@ def main(C):
     pixtemp = C.TEMPERATURE  # pixels radius
 
     for cnt in range(10 ** 6):
+        mesh.evolve(pixtemp, parallel=C.PARALLEL)
 
+        # region Purging points
         # The chance to purge points.
         # In the beginning when pixtemp is almost TEMPERATURE,
         # the chance to purge is high. As the temperature gets lower,
         # the chance to purge approaches zero.
         purge = np.random.rand() * C.PURGE_MULTIPLIER < pixtemp / C.TEMPERATURE
-
-        mesh.evolve(pixtemp,
-                    purge=purge,
-                    parallel=C.PARALLEL)
+        purge = False
+        if purge:
+            mesh.slow_purge()
         pixtemp *= C.TEMP_MULTIPLIER
+        # endregion
 
         # region print time
         if C.PRINT_CONSOLE:
