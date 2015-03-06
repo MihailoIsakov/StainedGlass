@@ -25,7 +25,8 @@ def main(C):
     if C.FOCUS_MAP is not None:
         focus = cv2.imread(C.FOCUS_MAP)
         focus = img2heur.grayscale(focus)
-        focus = img2heur.linear(focus)
+        # focus = img2heur.linear(focus)
+        focus = img2heur.exponential(focus  )
     else:
         focus = img2heur.default_focus_image(img)
 
@@ -70,8 +71,8 @@ def main(C):
         if (cnt % C.PRINT_COUNTER == (C.PRINT_COUNTER - 1)):
             print C.TRIANGLE_ALPHA
             col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
-            plotter.plot_points(mesh)
-            plotter.plot_arrow(mesh)
+            # plotter.plot_points(mesh)
+            # plotter.plot_arrow(mesh)
             plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
             plotter.plot_mesh_collection(col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)

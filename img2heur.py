@@ -13,6 +13,11 @@ def linear(img):
     return h.astype(np.uint16)
 
 
+def exponential(img):
+    h = np.e ** (img / 255.0 * 3)
+    return h.astype(np.uint16)
+
+
 def grayscale(img):
     import cv2
     return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
