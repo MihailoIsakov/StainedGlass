@@ -8,7 +8,7 @@ C = Namespace()
 C.STARTING_POINTS        = 500
 C.TEMPERATURE            = 5
 C.TEMP_MULTIPLIER        = 0.9997
-C.PURGE_MULTIPLIER       = 0.1  # 1 = 100%
+C.PURGE_MULTIPLIER       = 0.9  # 1 = 100%
 C.PARALLEL               = True
 C.PRINT                  = True
 C.PRINT_COUNTER          = 10

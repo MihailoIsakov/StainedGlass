@@ -95,7 +95,6 @@ class Mesh(object):
                         break
                 if included:
                     error += self.nptriangle2result(self.points2nptriangle(simplices))[1]
-            # print error
 
     def triangulate(self, parallel=True):
         self._triangulation = Triangulation(self.points)
@@ -103,7 +102,7 @@ class Mesh(object):
         self._triangulation.calculate_triangle_errors()
 
     @profile
-    def evolve(self, temp, purge=False, parallel=True):
+    def evolve(self, temp, parallel=True):
         old_triangulation = Triangulation(self.points)
         self._triangulation = old_triangulation
         old_triangulation.colorize_stack(parallel)
@@ -118,7 +117,6 @@ class Mesh(object):
         new_triangulation.colorize_stack(parallel)
         new_triangulation.assign_neighbors()
 
-        print ("Point num: ", len(self.points))
         for point in self.points:
             old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
             old_error = 0
@@ -136,9 +134,6 @@ class Mesh(object):
                 point.reset()
 
             point.neighbors = set()
-
-        if purge:
-            self.slow_purge()
 
     @profile
     def slow_purge(self):

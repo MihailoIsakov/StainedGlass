@@ -45,16 +45,18 @@ def main(C):
     pixtemp = C.TEMPERATURE  # pixels radius
 
     for cnt in range(10 ** 6):
+        mesh.evolve(pixtemp, parallel=C.PARALLEL)
 
+        # region purging points
         # The chance to purge points.
         # In the beginning when pixtemp is almost TEMPERATURE,
         # the chance to purge is high. As the temperature gets lower,
         # the chance to purge approaches zero.
-        purge = np.random.rand() * C.PURGE_MULTIPLIER < pixtemp / C.TEMPERATURE
+        assert 0 <= C.PURGE_MULTIPLIER < 1
+        while np.random.rand() < pixtemp / C.TEMPERATURE * C.PURGE_MULTIPLIER:
+            mesh.slow_purge()
+        # endregion
 
-        mesh.evolve(pixtemp,
-                    purge=purge,
-                    parallel=C.PARALLEL)
         pixtemp *= C.TEMP_MULTIPLIER
 
         # region print time
@@ -69,7 +71,6 @@ def main(C):
             plotter.plot_global_errors(mesh._error)
 
         if (cnt % C.PRINT_COUNTER == (C.PRINT_COUNTER - 1)):
-            print C.TRIANGLE_ALPHA
             col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
             # plotter.plot_points(mesh)
             # plotter.plot_arrow(mesh)
@@ -88,11 +89,12 @@ def parse_arguments(default_settings):
     parser.add_argument('IMAGE_URI')
     parser.add_argument('FOCUS_MAP', nargs='?')
     parser.add_argument('-t', '--temperature', type=float, dest='TEMPERATURE')
-    parser.add_argument('-p', '--points',      type=int,   dest='STARTING_POINTS')
+    parser.add_argument('-n', '--points',      type=int,   dest='STARTING_POINTS')
     parser.add_argument('-m', '--multiplier',  type=float, dest='TEMP_MULTIPLIER')
     parser.add_argument('-c', '--console',     type=bool,  dest='PRINT_CONSOLE')
     parser.add_argument('-d', '--draw',        type=int,   dest='PRINT_COUNTER')
     parser.add_argument('-a', '--alpha',       type=float, dest='TRIANGLE_ALPHA')
+    parser.add_argument('-p', '--purge',       type=float, dest='PURGE_MULTIPLIER')
 
     return parser.parse_args(namespace=default_settings)
 
