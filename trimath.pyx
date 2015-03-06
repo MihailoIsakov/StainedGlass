@@ -22,9 +22,20 @@ def set_image(np.ndarray[np.uint8_t, ndim=3] img):
     global IMAGE
     IMAGE = img
 
+
+def set_heuristic(np.ndarray[np.uint16_t, ndim=2] img):
+    global HEURISTIC
+    HEURISTIC = img
+
+
 cdef np.ndarray[np.uint8_t, ndim=3] get_image():
     global IMAGE
     return IMAGE
+
+
+cdef np.ndarray[np.uint16_t, ndim=2] get_heuristic():
+    global HEURISTIC
+    return HEURISTIC
 
 
 def DelaunayXY(x, y):
@@ -103,8 +114,11 @@ def cv2_triangle_sum(np.ndarray[FLOAT_t, ndim=2] tr):
     """
 
     cdef np.ndarray[np.uint8_t, ndim=3] IMAGE = get_image()
+    cdef np.ndarray[np.uint16_t, ndim=2] FOCUS = get_heuristic()
 
     cdef np.ndarray[np.uint8_t, ndim=3] cutout = _image_cutout(IMAGE, tr)
+    cdef np.ndarray[np.uint16_t, ndim=2] focus_cutout = _focus_image_cutout(FOCUS, tr)
+
     cdef np.ndarray[FLOAT_t, ndim=2] reltr = _relative_triangle(tr)
     cdef np.ndarray[np.long_t, ndim=2] normtr = reltr.round().astype(int).transpose()
 
@@ -140,17 +154,9 @@ def cv2_triangle_sum(np.ndarray[FLOAT_t, ndim=2] tr):
     cdef FLOAT_t green_err = 0
     cdef FLOAT_t blue_err  = 0
 
-    red_err = np.sum(np.abs(cutout[:, :, 0] - red) * mask)
-    green_err = np.sum(np.abs(cutout[:, :, 1] - green) * mask)
-    blue_err = np.sum(np.abs(cutout[:, :, 2] - blue) * mask)
-    # x = 0
-    # y = 0
-
-    # for x in range(maxx):
-    #     for y in range(maxy):
-    #         red_err   += np.abs(cutout[x, y, 0] * mask[x, y] - red)
-    #         green_err += np.abs(cutout[x, y, 1] * mask[x, y] - green)
-    #         blue_err  += np.abs(cutout[x, y, 2] * mask[x, y] - blue)
+    red_err =   np.sum(np.abs(cutout[:, :, 0] - red  ) * mask * focus_cutout)
+    green_err = np.sum(np.abs(cutout[:, :, 1] - green) * mask * focus_cutout)
+    blue_err =  np.sum(np.abs(cutout[:, :, 2] - blue ) * mask * focus_cutout)
 
     cdef FLOAT_t error = red_err + green_err + blue_err
     color = (red / 255.0, green / 255.0, blue / 255.0)
@@ -161,6 +167,12 @@ cdef _make_mask(np.ndarray[np.uint8_t, ndim=3] cutout, np.ndarray[np.long_t, ndi
     cdef np.ndarray[np.uint8_t, ndim=2] mask = np.zeros([cutout.shape[0], cutout.shape[1]], dtype=np.uint8)
     fillConvexPoly(mask, rel_tri, 1)
     return mask
+
+
+cdef np.ndarray[np.uint16_t, ndim=2] _focus_image_cutout(np.ndarray[np.uint16_t, ndim=2] img, np.ndarray[FLOAT_t, ndim=2] tr):
+    rect = _get_rect(tr)
+    cdef np.ndarray[np.uint16_t, ndim=2] cutout = img[rect.south:rect.north, rect.west:rect.east]
+    return cutout
 
 
 cdef np.ndarray[np.uint8_t, ndim=3] _image_cutout(np.ndarray[np.uint8_t, ndim=3] img, np.ndarray[FLOAT_t, ndim=2] tr):

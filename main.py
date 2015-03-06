@@ -7,11 +7,11 @@ import trimath
 from support import plotter
 from support.meshcollection import FlatMeshCollection
 from support.profiler_fix import *
-
+import img2heur
 
 import cv2
 import numpy as np
-from time import time
+import time
 
 
 @profile
@@ -22,7 +22,15 @@ def main(C):
     cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
 #    img = np.flipud(img)
 
+    if C.FOCUS_MAP is not None:
+        focus = cv2.imread(C.FOCUS_MAP)
+        focus = img2heur.grayscale(focus)
+        focus = img2heur.linear(focus)
+    else:
+        focus = img2heur.default_focus_image(img)
+
     trimath.set_image(img)
+    trimath.set_heuristic(focus)
 
     mesh = Mesh(img, C.STARTING_POINTS, parallel=C.PARALLEL)
     mesh.triangulate(True)
@@ -31,7 +39,7 @@ def main(C):
     plotter.start()
     plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
     plotter.plot_mesh_collection(col)
-    past = time()
+    past = time.time()
 
     pixtemp = C.TEMPERATURE  # pixels radius
 
@@ -51,7 +59,7 @@ def main(C):
         # region print time
         if C.PRINT_CONSOLE:
             print("Temperature: "+str(pixtemp))
-            now = time()
+            now = time.time()
             print("Time elapsed: ", now - past)
             past = now
         #endregion
@@ -62,8 +70,8 @@ def main(C):
         if (cnt % C.PRINT_COUNTER == (C.PRINT_COUNTER - 1)):
             print C.TRIANGLE_ALPHA
             col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
-            #plotter.plot_points(mesh)
-            #plotter.plot_arrow(mesh)
+            plotter.plot_points(mesh)
+            plotter.plot_arrow(mesh)
             plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
             plotter.plot_mesh_collection(col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)

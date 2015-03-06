@@ -3,7 +3,8 @@ __author__ = 'zieghailo'
 from argparse import Namespace
 
 C = Namespace()
-C.IMAGE_URI              = 'images/renoir.jpg'
+# C.IMAGE_URI              = 'images/sonja.jpg'
+# C.FOCUS_MAP              = 'images/sonja.jpg'
 C.STARTING_POINTS        = 500
 C.TEMPERATURE            = 5
 C.TEMP_MULTIPLIER        = 0.9997

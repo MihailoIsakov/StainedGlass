@@ -5,5 +5,6 @@ from Cython.Build import cythonize
 
 setup(
     name = "Stained Glass",
-    ext_modules = cythonize('trimath.pyx'),  # accepts a glob pattern
+    ext_modules = cythonize('trimath.pyx'),
+    requires=['numpy', 'xxhash']  # accepts a glob pattern
 )
