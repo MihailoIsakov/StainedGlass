@@ -110,6 +110,8 @@ class Mesh(object):
 
         self._error = old_triangulation.calculate_global_error()
 
+        self._color_triangles_with_verts(self.points[100].neighbors)
+
         for point in self.points:
             point.shift(temp)
 
@@ -117,6 +119,8 @@ class Mesh(object):
         new_triangulation.colorize_stack(parallel)
         new_triangulation.assign_neighbors()
 
+
+        self._color_triangles_with_verts(self.points[100].neighbors)
         for point in self.points:
             old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
             old_error = 0
@@ -144,3 +148,24 @@ class Mesh(object):
         triangle_errors = self._triangulation.calculate_triangle_errors()
         mx = np.argmax(triangle_errors)
         self.split_triangle(self._triangulation._triangles[mx])
+
+
+    def _color_triangles_with_verts(self, verts):
+        from support import lru_cache as cache
+        for tr in self._triangulation.delaunay.simplices:
+            allin = True
+            for v in tr:
+                if v not in verts:
+                    allin = False
+            if allin:
+                nptr = self._triangulation.points2nptriangle(tr)
+                res = cache.get(nptr)
+                cache.set(nptr, ((0, 0, 1), res[1]))
+
+    def _color_neighbors(self, pindex):
+        from support import lru_cache as cache
+        for tr in self._triangulation.delaunay.simplices:
+            if pindex in tr:
+                nptr = self._triangulation.points2nptriangle(tr)
+                res = cache.get(nptr)
+                cache.set(nptr, ((1, 0, 0), res[1]))
