@@ -126,11 +126,7 @@ def cv2_triangle_sum(np.ndarray[FLOAT_t, ndim=2] tr):
     cdef np.uint64_t pixnum = np.sum(mask)
 
     if pixnum == 0:
-        return (0,0,0), 0
-
-    # cdef int maxx, maxy
-    # maxx = cutout.shape[0]
-    # maxy = cutout.shape[1]
+        return (0,0,0), 0, 0
 
     cdef FLOAT_t red = 0
     cdef FLOAT_t blue = 0
@@ -139,12 +135,6 @@ def cv2_triangle_sum(np.ndarray[FLOAT_t, ndim=2] tr):
     red = np.sum(cutout[:, :, 0] * mask)
     green = np.sum(cutout[:, :, 1] * mask)
     blue = np.sum(cutout[:, :, 2] * mask)
-
-    # for x in range(maxx):
-    #     for y in range(maxy):
-    #         red   += cutout[x, y, 0] * mask[x, y]
-    #         green += cutout[x, y, 1] * mask[x, y]
-    #         blue  += cutout[x, y, 2] * mask[x, y]
 
     red = red / pixnum
     blue = blue / pixnum
@@ -160,7 +150,7 @@ def cv2_triangle_sum(np.ndarray[FLOAT_t, ndim=2] tr):
 
     cdef FLOAT_t error = red_err + green_err + blue_err
     color = (red / 255.0, green / 255.0, blue / 255.0)
-    return color, error
+    return color, error, pixnum
 
 
 cdef _make_mask(np.ndarray[np.uint8_t, ndim=3] cutout, np.ndarray[np.long_t, ndim=2] rel_tri):

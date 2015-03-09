@@ -110,7 +110,7 @@ class Mesh(object):
 
         self._error = old_triangulation.calculate_global_error()
 
-        self._color_triangles_with_verts(self.points[100].neighbors)
+        # self._color_triangles_with_verts(self.points[100].neighbors)
 
         for point in self.points:
             point.shift(temp)
@@ -120,7 +120,7 @@ class Mesh(object):
         new_triangulation.assign_neighbors()
 
 
-        self._color_triangles_with_verts(self.points[100].neighbors)
+        # self._color_triangles_with_verts(self.points[100].neighbors)
         for point in self.points:
             old_triangles = old_triangulation.find_triangles_with_indices(point.neighbors)
             old_error = 0

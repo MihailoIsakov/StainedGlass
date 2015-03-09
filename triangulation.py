@@ -41,7 +41,7 @@ class Triangulation():
         """
         Triangulate the current points,
         add the triangle numpy arrays to self.triangles,
-        salvage results from the cache,
+        salvage results from the cache,q
         add missing results to the stack.
         """
         self.points = points
@@ -102,7 +102,9 @@ class Triangulation():
             pool.join()
 
             for triangle, res in zip(self._triangle_stack, results):
-                cache.set(triangle, res)
+                pixnum = max(1, res[2])
+                newres = (res[0], res[1] / pixnum)
+                cache.set(triangle, newres)
 
             self._triangle_stack.clear()
 

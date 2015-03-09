@@ -95,6 +95,7 @@ def parse_arguments(default_settings):
     parser.add_argument('-d', '--draw',        type=int,   dest='PRINT_COUNTER')
     parser.add_argument('-a', '--alpha',       type=float, dest='TRIANGLE_ALPHA')
     parser.add_argument('-p', '--purge',       type=float, dest='PURGE_MULTIPLIER')
+    parser.add_argument('-e', '--error-plot',  type=int,   dest='PRINT_ERROR_COUNTER')
 
     return parser.parse_args(namespace=default_settings)
 
