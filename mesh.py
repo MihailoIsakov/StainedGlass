@@ -148,9 +148,7 @@ class Mesh(object):
         new_triangulation.colorize_stack(parallel)
 
         # add the new neighbors to the old ones
-        print self.points[100].neighbors
         new_triangulation.assign_neighbors(self.points)
-        print self.points[100].neighbors
 
         # list of lists, each element i consists of points who have the neighbor point[i]
         nb_list = self.sort_by_neighbors(self.points)
@@ -175,7 +173,6 @@ class Mesh(object):
         mx = np.argmax(triangle_errors)
         self.split_triangle(self._triangulation._triangles[mx])
 
-
     def _color_triangles_with_verts(self, verts):
         from support import lru_cache as cache
         for tr in self._triangulation.delaunay.simplices:
@@ -195,3 +192,4 @@ class Mesh(object):
                 nptr = self._triangulation.points2nptriangle(tr)
                 res = cache.get(nptr)
                 cache.set(nptr, ((1, 0, 0), res[1]))
+

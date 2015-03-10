@@ -5,21 +5,25 @@ import matplotlib.pylab as pyl
 import numpy as np
 
 imagePlot = None
+errorGraph = None
 errorPlot = None
 
 def start(size=(20, 10)):
-    global imagePlot, errorPlot
+    global imagePlot, errorGraph, errorPlot
     fig = plt.figure(1, figsize = size)
     imagePlot = fig.add_subplot(111)
-    errorPlot = plt.figure(2).add_subplot(111)
-
     fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+
+    errorGraph = plt.figure(2).add_subplot(111)
+    fig = plt.figure(3)
+    errorPlot = fig.add_subplot(111)
+    fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+
     plt.ion()
     plt.show()
 
 
 def plot_mesh_collection(collection):
-    # ax.clear()
     imagePlot.add_collection(collection)
     imagePlot.autoscale_view()
     imagePlot.axis('equal')
@@ -27,22 +31,17 @@ def plot_mesh_collection(collection):
     plt.draw()
 
 
+def plot_mesh_error_collection(collection):
+    errorPlot.add_collection(collection)
+    errorPlot.autoscale_view()
+    errorPlot.axis('equal')
+    plt.figure(3)  # TODO sort out the figure numbers
+    plt.draw()
+
+
 def plot_original(img, alpha):
     plt.figure(1)
     plt.imshow(img, alpha=alpha)
-
-
-# def draw_mesh(mesh):
-#     global imagePlot
-#     mesh.build_collection()
-#     pcol = mesh.collection
-#     pcol.set_linewidth(0)
-#     pcol.set_color(mesh.colors)
-#     imagePlot.add_collection(pcol)
-#     imagePlot.autoscale_view()
-#     imagePlot.axis('equal')
-#     plt.draw()
-#     return imagePlot
 
 oldx = None
 oldy = None
@@ -79,9 +78,9 @@ def plot_arrow(mesh):
 
 errors = []
 def plot_global_errors(error):
-    global errorPlot, errors
+    global errorGraph, errors
     errors.append(error)
-    errorPlot.plot(errors, 'r')
+    errorGraph.plot(errors, 'r')
     plt.figure(2)
     # plt.ylim(0)
     plt.draw()

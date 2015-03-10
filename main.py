@@ -5,7 +5,7 @@ __author__ = 'zieghailo'
 from mesh import Mesh
 import trimath
 from support import plotter
-from support.meshcollection import FlatMeshCollection
+from support.meshcollection import FlatMeshCollection, FlatMeshErrorCollection
 from support.profiler_fix import *
 import img2heur
 
@@ -20,13 +20,13 @@ def main(C):
 
     img = cv2.imread(C.IMAGE_URI)
     cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
-#    img = np.flipud(img)
+    # img = np.flipud(img)
 
     if C.FOCUS_MAP is not None:
         focus = cv2.imread(C.FOCUS_MAP)
         focus = img2heur.grayscale(focus)
         # focus = img2heur.linear(focus)
-        focus = img2heur.exponential(focus  )
+        focus = img2heur.exponential(focus)
     else:
         focus = img2heur.default_focus_image(img)
 
@@ -36,10 +36,12 @@ def main(C):
     mesh = Mesh(img, C.STARTING_POINTS, parallel=C.PARALLEL)
     mesh.triangulate(True)
 
-    col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
     plotter.start()
     plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
+    col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
     plotter.plot_mesh_collection(col)
+    err_col = FlatMeshErrorCollection(mesh._triangulation)
+    plotter.plot_mesh_error_collection(err_col)
 
     past = time.time()
 
@@ -73,11 +75,13 @@ def main(C):
             plotter.plot_global_errors(mesh._error)
 
         if (cnt % C.PRINT_COUNTER == (C.PRINT_COUNTER - 1)):
-            col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
             # plotter.plot_points(mesh)
             # plotter.plot_arrow(mesh)
             plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
+            col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
+            err_col = FlatMeshErrorCollection(mesh._triangulation)
             plotter.plot_mesh_collection(col)
+            plotter.plot_mesh_error_collection(err_col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
 
     plotter.keep_plot_open()
