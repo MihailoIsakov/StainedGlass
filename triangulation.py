@@ -84,7 +84,7 @@ class Triangulation():
             result = None
         return result
 
-    def colorize_stack(self, parallel=True):
+    def colorize_stack(self, absolute_error=False, parallel=True):
         if not parallel:
             while len(self._triangle_stack) > 0:
                 triangle = self._triangle_stack.pop()
@@ -103,8 +103,11 @@ class Triangulation():
             pool.join()
 
             for triangle, res in zip(self._triangle_stack, results):
-                pixnum = max(1, res[2])
-                newres = (res[0], res[1] / pixnum)
+                if absolute_error:
+                    newres = (res[0], res[1])
+                else:
+                    pixnum = max(1, res[2])
+                    newres = (res[0], res[1] / pixnum)
                 cache.set(triangle, newres)
 
             self._triangle_stack.clear()

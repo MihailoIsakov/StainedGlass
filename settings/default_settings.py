@@ -15,3 +15,5 @@ C.PRINT_COUNTER          = 10
 C.PRINT_CONSOLE          = True
 C.PRINT_ERROR_COUNTER    = 1
 C.TRIANGLE_ALPHA         = 0.6
+C.ABSOLUTE_ERROR         = False
+C.PLOT_ARROWS            = False

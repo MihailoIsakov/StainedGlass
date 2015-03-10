@@ -35,8 +35,6 @@ class Mesh(object):
         self._triangulation = None
         self._randomize()
 
-        self.triangulate(parallel)
-
     def _randomize(self):
         self._points = []
         h, w = self.image.shape[:2]
@@ -96,11 +94,6 @@ class Mesh(object):
                 if included:
                     error += self.nptriangle2result(self.points2nptriangle(simplices))[1]
 
-    def triangulate(self, parallel=True):
-        self._triangulation = Triangulation(self.points)
-        self._triangulation.colorize_stack(parallel)
-        self._triangulation.calculate_triangle_errors()
-
     @staticmethod
     def sort_by_neighbors(points):
         """
@@ -118,7 +111,7 @@ class Mesh(object):
         return nb_list
 
     @profile
-    def evolve(self, temp, parallel=True):
+    def evolve(self, temp, absolute_error=False, parallel=True):
         """
         Moves the points around randomly, keeping the changes that reduce errors,
         and reverting those that don't. Each evolve cycle the whole image is retruangulated
@@ -129,7 +122,7 @@ class Mesh(object):
         # create a control triangulation, calculate the colors and the errors
         old_triangulation = Triangulation(self.points)
         self._triangulation = old_triangulation
-        old_triangulation.colorize_stack(parallel)
+        old_triangulation.colorize_stack(absolute_error, parallel)
 
         # assign neighbors to each point
         old_triangulation.assign_neighbors(self.points)
@@ -145,7 +138,7 @@ class Mesh(object):
 
         # calculate the new triangulation, colors and errors
         new_triangulation = Triangulation(self.points)
-        new_triangulation.colorize_stack(parallel)
+        new_triangulation.colorize_stack(absolute_error, parallel)
 
         # add the new neighbors to the old ones
         new_triangulation.assign_neighbors(self.points)

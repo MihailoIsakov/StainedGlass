@@ -34,21 +34,16 @@ def main(C):
     trimath.set_heuristic(focus)
 
     mesh = Mesh(img, C.STARTING_POINTS, parallel=C.PARALLEL)
-    mesh.triangulate(True)
 
     plotter.start()
     plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
-    col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
-    plotter.plot_mesh_collection(col)
-    err_col = FlatMeshErrorCollection(mesh._triangulation)
-    plotter.plot_mesh_error_collection(err_col)
 
     past = time.time()
 
     pixtemp = C.TEMPERATURE  # pixels radius
 
     for cnt in range(10 ** 6):
-        mesh.evolve(pixtemp, parallel=C.PARALLEL)
+        mesh.evolve(pixtemp, absolute_error=False, parallel=C.PARALLEL)
 
         # region purging points
         # The chance to purge points.
@@ -57,6 +52,7 @@ def main(C):
         # the chance to purge approaches zero.
         assert 0 <= C.PURGE_MULTIPLIER < 1
         while np.random.rand() < pixtemp / C.TEMPERATURE * C.PURGE_MULTIPLIER:
+            print 'purge'
             mesh.slow_purge()
         # endregion
 
@@ -75,15 +71,16 @@ def main(C):
             plotter.plot_global_errors(mesh._error)
 
         if (cnt % C.PRINT_COUNTER == (C.PRINT_COUNTER - 1)):
-            # plotter.plot_points(mesh)
-            # plotter.plot_arrow(mesh)
+
             plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
             col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
             err_col = FlatMeshErrorCollection(mesh._triangulation)
             plotter.plot_mesh_collection(col)
             plotter.plot_mesh_error_collection(err_col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
-
+            if C.PLOT_ARROWS:
+                plotter.plot_points(mesh)
+                plotter.plot_arrow(mesh)
     plotter.keep_plot_open()
 
 
@@ -102,6 +99,8 @@ def parse_arguments(default_settings):
     parser.add_argument('-a', '--alpha',       type=float, dest='TRIANGLE_ALPHA')
     parser.add_argument('-p', '--purge',       type=float, dest='PURGE_MULTIPLIER')
     parser.add_argument('-e', '--error-plot',  type=int,   dest='PRINT_ERROR_COUNTER')
+    parser.add_argument('--absolute-error',    action='store_true', dest='ABSOLUTE_ERROR')
+    parser.add_argument('--plot-arrows',       action='store_true', dest='PLOT_ARROWS')
 
     return parser.parse_args(namespace=default_settings)
 
