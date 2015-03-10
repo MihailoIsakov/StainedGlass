@@ -13,5 +13,5 @@ C.PARALLEL               = True
 C.PRINT                  = True
 C.PRINT_COUNTER          = 10
 C.PRINT_CONSOLE          = True
-C.PRINT_ERROR_COUNTER    = 10
+C.PRINT_ERROR_COUNTER    = 1
 C.TRIANGLE_ALPHA         = 0.6

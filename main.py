@@ -40,6 +40,7 @@ def main(C):
     plotter.start()
     plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
     plotter.plot_mesh_collection(col)
+
     past = time.time()
 
     pixtemp = C.TEMPERATURE  # pixels radius
@@ -58,6 +59,7 @@ def main(C):
         # endregion
 
         pixtemp *= C.TEMP_MULTIPLIER
+        # endregion
 
         # region print time
         if C.PRINT_CONSOLE:
@@ -102,10 +104,6 @@ def parse_arguments(default_settings):
 
 if __name__ == "__main__":
     from settings.default_settings import C
-
     settings = parse_arguments(C)
-
-    print(settings)
-    print C
 
     main(C)
