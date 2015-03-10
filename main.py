@@ -43,7 +43,7 @@ def main(C):
     pixtemp = C.TEMPERATURE  # pixels radius
 
     for cnt in range(10 ** 6):
-        mesh.evolve(pixtemp, absolute_error=False, parallel=C.PARALLEL)
+        mesh.evolve(pixtemp, absolute_error=C.ABSOLUTE_ERROR, parallel=C.PARALLEL)
 
         # region purging points
         # The chance to purge points.
@@ -52,7 +52,6 @@ def main(C):
         # the chance to purge approaches zero.
         assert 0 <= C.PURGE_MULTIPLIER < 1
         while np.random.rand() < pixtemp / C.TEMPERATURE * C.PURGE_MULTIPLIER:
-            print 'purge'
             mesh.slow_purge()
         # endregion
 
@@ -108,5 +107,4 @@ def parse_arguments(default_settings):
 if __name__ == "__main__":
     from settings.default_settings import C
     settings = parse_arguments(C)
-
     main(C)

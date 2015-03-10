@@ -45,14 +45,13 @@ def plot_original(img, alpha):
 
 oldx = None
 oldy = None
-def plot_points(mesh):
+def plot_points(mesh, plot_old=False):
     global oldx, oldy, imagePlot
     x = [p.x for p in mesh.points]
     y = [p.y for p in mesh.points]
     imagePlot.clear()
-    for p in mesh.points:
-        imagePlot.plot(x, y, 'ro')
-    if (oldx is not None):
+    imagePlot.plot(x, y, 'ro')
+    if plot_old and oldx is not None:
         imagePlot.plot(oldx, oldy, 'bo')
     oldx = x
     oldy = y
