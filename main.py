@@ -69,7 +69,7 @@ def main(C):
         if (cnt % C.PRINT_ERROR_COUNTER == 0):
             plotter.plot_global_errors(mesh._error)
 
-        if (cnt % C.PRINT_COUNTER == (C.PRINT_COUNTER - 1)):
+        if (cnt % C.PRINT_COUNTER == 0):
 
             plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
             col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)

@@ -28,7 +28,7 @@ def plot_mesh_collection(collection):
     imagePlot.add_collection(collection)
     imagePlot.autoscale_view()
     imagePlot.axis('equal')
-    # plt.figure(1)
+    plt.figure(1)
     plt.draw()
 
 

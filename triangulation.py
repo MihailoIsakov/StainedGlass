@@ -123,27 +123,6 @@ class Triangulation():
             for p in points:
                 p.neighbors.update(set(verts))
 
-    @profile
-    def find_triangles_with_indices(self, neighbors):
-        """
-        Finds all the triangles in self.delaunay
-        with indices in neighbors.
-        :param neighbors: The indices of points
-        :return: triangles with indices in neighbors
-        """
-        triangles = []
-        for tr in self.delaunay.simplices:
-            is_in = True
-            for p in tr:
-                if p not in neighbors:
-                    is_in = False
-                    break
-
-            # is_in = np.array([el in neighbors for el in tr]).all()
-            if is_in:
-                triangles.append(tr)
-        return triangles
-
     def neighborhood_errors(self, points, nb_list):
         """
         Goes through the list of triangles in the current triangulation,

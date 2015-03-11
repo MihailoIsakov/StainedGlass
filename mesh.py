@@ -1,8 +1,8 @@
 __author__ = 'zieghailo'
 
 import numpy as np
-from random import sample
-from heapq import nlargest, nsmallest
+from random import choice
+from heapq import nsmallest, nlargest
 
 from triangulation import *
 from point import Point as BasePoint
@@ -157,14 +157,24 @@ class Mesh(object):
                 p.reset()
 
     @profile
-    def slow_purge(self):
+    def slow_purge(self, n=10):
+        """
+        Takes the n worst points in the triangulation,
+        and removes one of them at random.
+        :param n: Number of points to be taken into account
+        """
         point_errors = self._triangulation.calculate_point_errors(self.points)
-        mn = np.argmin(point_errors[4:])
-        self.remove_point(self.points[mn+4])
+        npoint_indices = nsmallest(n, enumerate(point_errors[4:]), lambda x: x[1])
+        selected_point_index = choice(npoint_indices)
+        self.remove_point(self.points[selected_point_index[0]+4])
+
+        # mn = np.argmin(point_errors[4:])
+        # self.remove_point(self.points[mn+4])
 
         triangle_errors = self._triangulation.calculate_triangle_errors()
-        mx = np.argmax(triangle_errors)
-        self.split_triangle(self._triangulation._triangles[mx])
+        ntriangle_indices = nlargest(n, enumerate(triangle_errors), lambda x: x[1])
+        selected_triangle_index = choice(ntriangle_indices)
+        self.split_triangle(self._triangulation._triangles[selected_point_index[0]])
 
     def _color_triangles_with_verts(self, verts):
         from support import lru_cache as cache
