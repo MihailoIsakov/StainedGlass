@@ -159,22 +159,20 @@ class Mesh(object):
     @profile
     def slow_purge(self, n=10):
         """
-        Takes the n worst points in the triangulation,
-        and removes one of them at random.
-        :param n: Number of points to be taken into account
+        Purges the n worst points and triangles in the triangulation.
+        :param n: Number of points/triangles to be purged
         """
         point_errors = self._triangulation.calculate_point_errors(self.points)
         npoint_indices = nsmallest(n, enumerate(point_errors[4:]), lambda x: x[1])
-        selected_point_index = choice(npoint_indices)
-        self.remove_point(self.points[selected_point_index[0]+4])
-
-        # mn = np.argmin(point_errors[4:])
-        # self.remove_point(self.points[mn+4])
+        npoint_indices = [x[0] for x in npoint_indices]
+        # we cannot just go through the list and delete points, as it will mess with the remaining points
+        for pi in sorted(npoint_indices, reverse=True):
+            self.remove_point(self.points[pi + 4])  # 4 is used to jump over the first fixed points
 
         triangle_errors = self._triangulation.calculate_triangle_errors()
         ntriangle_indices = nlargest(n, enumerate(triangle_errors), lambda x: x[1])
-        selected_triangle_index = choice(ntriangle_indices)
-        self.split_triangle(self._triangulation._triangles[selected_point_index[0]])
+        for ti in ntriangle_indices:
+            self.split_triangle(self._triangulation._triangles[ti[0]])
 
     def _color_triangles_with_verts(self, verts):
         from support import lru_cache as cache

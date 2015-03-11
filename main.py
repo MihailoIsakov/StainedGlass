@@ -98,7 +98,7 @@ def parse_arguments(default_settings):
     parser.add_argument('-a', '--alpha',       type=float, dest='TRIANGLE_ALPHA')
     parser.add_argument('-p', '--purge',       type=float, dest='PURGE_MULTIPLIER')
     parser.add_argument('-e', '--error-plot',  type=int,   dest='PRINT_ERROR_COUNTER')
-    parser.add_argument('--absolute-error',    action='store_true', dest='ABSOLUTE_ERROR')
+    parser.add_argument('--relative-error',    action='store_false', dest='ABSOLUTE_ERROR')
     parser.add_argument('--plot-arrows',       action='store_true', dest='PLOT_ARROWS')
 
     return parser.parse_args(namespace=default_settings)
@@ -107,4 +107,5 @@ def parse_arguments(default_settings):
 if __name__ == "__main__":
     from settings.default_settings import C
     settings = parse_arguments(C)
+    print settings
     main(C)
