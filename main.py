@@ -51,8 +51,8 @@ def main(C):
         # the chance to purge is high. As the temperature gets lower,
         # the chance to purge approaches zero.
         assert 0 <= C.PURGE_MULTIPLIER < 1
-        while np.random.rand() < pixtemp / C.TEMPERATURE * C.PURGE_MULTIPLIER:
-            mesh.slow_purge()
+        if np.random.rand() < pixtemp / C.TEMPERATURE * C.PURGE_MULTIPLIER:
+            mesh.slow_purge(n=10)
         # endregion
 
         pixtemp *= C.TEMP_MULTIPLIER

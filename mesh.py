@@ -151,7 +151,7 @@ class Mesh(object):
 
         for i, p in enumerate(self.points):
             p.neighbors = set()
-            if old_errors[i] > new_errors[i]:
+            if old_errors[i] >= new_errors[i]:
                 p.accept()
             else:
                 p.reset()
