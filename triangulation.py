@@ -44,7 +44,6 @@ class Triangulation():
         salvage results from the cache,q
         add missing results to the stack.
         """
-        # self.points = points
         self.positions = np.array([p.position for p in points])
         x = np.array([p.x for p in points])
         y = np.array([p.y for p in points])
@@ -167,10 +166,10 @@ class Triangulation():
         return errors
 
     def calculate_triangle_errors(self):
-        errors = np.zeros(len(self._triangles))
+        errors = np.zeros(len(self.delaunay.simplices))
 
-        for i, triangle in enumerate(self._triangles):
-             errors[i] = nptriangle2error(triangle)
+        for i, tr in enumerate(self.delaunay.simplices):
+            errors[i] = nptriangle2error(self.points2nptriangle(tr))
 
         return errors
 

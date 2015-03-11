@@ -14,10 +14,11 @@ def start(size=(20, 10)):
     imagePlot = fig.add_subplot(111)
     fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
 
-    errorGraph = plt.figure(2).add_subplot(111)
-    fig = plt.figure(3)
-    errorPlot = fig.add_subplot(111)
-    fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+    fig = plt.figure(2)
+    errorGraph = fig.add_subplot(121)
+    errorPlot = fig.add_subplot(122)
+    # fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+    plt.gca().invert_yaxis()
 
     plt.ion()
     plt.show()
@@ -27,7 +28,7 @@ def plot_mesh_collection(collection):
     imagePlot.add_collection(collection)
     imagePlot.autoscale_view()
     imagePlot.axis('equal')
-    plt.figure(1)
+    # plt.figure(1)
     plt.draw()
 
 
@@ -35,7 +36,6 @@ def plot_mesh_error_collection(collection):
     errorPlot.add_collection(collection)
     errorPlot.autoscale_view()
     errorPlot.axis('equal')
-    plt.figure(3)  # TODO sort out the figure numbers
     plt.draw()
 
 
