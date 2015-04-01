@@ -1,6 +1,15 @@
-Stained Glass vectorizes an image so that it is composed of a number of monochrome triangles, while trying to minimize the errror. It uses simulated annealing to optimize the image quality, by moving the points around and measuring the error they are causing.
+Stained Glass is an image polygonization tool built for my soft computing class.
+It uses simulated annealing to find an optimal image configuration for a given number of points.
 
-To run Stainged Glass with a default image, just pull the repo and run <code>./main.py </code>
-While assigning images from the command line is planned, for now just change the settings file that is imported in the main.py file, and modify/create your own in the settings folder.
+The algorithm takes in two parameters, the image, and a heuristic image which specifies on which parts the annealing should focus on.
 
-Stained Glass uses numpy, scipy, openCV, matplotlib, xxHash. (I may have forgotten a couple, I'll check soon)
+The image below is generated with: 
+<code> ./main.py images/lion.jpg images/fcs_lion.jpg -t 20 -m 0.99 -n 300 -a 1 -p 0.9 </code>
+
+Input image: <br>
+![alt tag](https://github.com/ZiegHailo/StainedGlass/blob/master/images/lion.jpg?raw=true) <br>
+Heuristic: <br>
+![alt tag](https://github.com/ZiegHailo/StainedGlass/blob/master/images/fcs_lion.jpg?raw=true) <br>
+
+Result: <br>
+![alt tag](https://github.com/ZiegHailo/StainedGlass/blob/master/results/lion2.jpg?raw=true)
