@@ -10,9 +10,11 @@ errorPlot = None
 
 def start(size=(20, 10)):
     global imagePlot, errorGraph, errorPlot
-    fig = plt.figure(1, figsize = size)
+    fig = plt.figure(1) #, figsize = size)
     imagePlot = fig.add_subplot(111)
     fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+    imagePlot.axis('equal')
+    imagePlot.autoscale_view('tight')
 
     fig = plt.figure(2)
     errorGraph = fig.add_subplot(121)
@@ -26,10 +28,14 @@ def start(size=(20, 10)):
 
 def plot_mesh_collection(collection):
     imagePlot.add_collection(collection)
-    imagePlot.autoscale_view()
-    imagePlot.axis('equal')
+
     plt.figure(1)
     plt.draw()
+
+
+def save_mesh(uri):
+    fig = plt.figure(1)
+    fig.savefig(uri)
 
 
 def plot_mesh_error_collection(collection):

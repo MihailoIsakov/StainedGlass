@@ -14,7 +14,7 @@ def linear(img):
 
 
 def exponential(img):
-    h = np.e ** (img / 255.0 * 3)
+    h = np.e ** (img / 255.0 * 4)
     return h.astype(np.uint16)
 
 

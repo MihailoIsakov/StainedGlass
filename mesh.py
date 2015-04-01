@@ -1,7 +1,6 @@
 __author__ = 'zieghailo'
 
 import numpy as np
-from random import choice
 from heapq import nsmallest, nlargest
 
 from triangulation import *

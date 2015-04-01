@@ -41,6 +41,7 @@ def main(C):
     past = time.time()
 
     pixtemp = C.TEMPERATURE  # pixels radius
+    min_error = 10**16
 
     for cnt in range(10 ** 6):
         mesh.evolve(pixtemp, absolute_error=C.ABSOLUTE_ERROR, parallel=C.PARALLEL)
@@ -50,7 +51,7 @@ def main(C):
         # In the beginning when pixtemp is almost TEMPERATURE,
         # the chance to purge is high. As the temperature gets lower,
         # the chance to purge approaches zero.
-        assert 0 <= C.PURGE_MULTIPLIER < 1
+        # assert 0 <= C.PURGE_MULTIPLIER < 1
         if np.random.rand() < pixtemp / C.TEMPERATURE * C.PURGE_MULTIPLIER:
             mesh.slow_purge(n=10)
         # endregion
@@ -80,6 +81,11 @@ def main(C):
             if C.PLOT_ARROWS:
                 plotter.plot_points(mesh)
                 plotter.plot_arrow(mesh)
+		
+	    if mesh._error <= min_error:
+		min_error = mesh._error
+       	        plotter.save_mesh("out.svg")
+
     plotter.keep_plot_open()
 
 
@@ -105,6 +111,8 @@ def parse_arguments(default_settings):
 
 
 if __name__ == "__main__":
+    import os
+    os.system("taskset -p 0xff %d" % os.getpid())
     from settings.default_settings import C
     settings = parse_arguments(C)
     print settings
