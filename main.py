@@ -35,7 +35,7 @@ def main(C):
 
     mesh = Mesh(img, C.STARTING_POINTS, parallel=C.PARALLEL)
 
-    plotter.start()
+    plotter.start(plotErrors=C.PRINT_ERROR_COUNTER > 0)
     plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
 
     past = time.time()
@@ -67,16 +67,16 @@ def main(C):
             past = now
         #endregion
 
-        if (cnt % C.PRINT_ERROR_COUNTER == 0):
+        if (C.PRINT_ERROR_COUNTER > 0 and cnt % C.PRINT_ERROR_COUNTER == 0): 
             plotter.plot_global_errors(mesh._error)
-
+            plotter.plot_mesh_error_collection(err_col)
+            
         if (cnt % C.PRINT_COUNTER == 0):
 
             plotter.plot_original(img, 1 - C.TRIANGLE_ALPHA)
             col = FlatMeshCollection(mesh._triangulation, alpha=C.TRIANGLE_ALPHA)
             err_col = FlatMeshErrorCollection(mesh._triangulation)
             plotter.plot_mesh_collection(col)
-            plotter.plot_mesh_error_collection(err_col)
             # plotter.plot_error_hist(mesh.point_errors, mesh.triangle_errors)
             if C.PLOT_ARROWS:
                 plotter.plot_points(mesh)

@@ -8,7 +8,7 @@ imagePlot = None
 errorGraph = None
 errorPlot = None
 
-def start(size=(20, 10)):
+def start(size=(20, 10), plotErrors=False):
     global imagePlot, errorGraph, errorPlot
     fig = plt.figure(1) #, figsize = size)
     imagePlot = fig.add_subplot(111)
@@ -16,11 +16,12 @@ def start(size=(20, 10)):
     imagePlot.axis('equal')
     imagePlot.autoscale_view('tight')
 
-    fig = plt.figure(2)
-    errorGraph = fig.add_subplot(121)
-    errorPlot = fig.add_subplot(122)
-    # fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
-    plt.gca().invert_yaxis()
+    if plotErrors:
+        fig = plt.figure(2)
+        errorGraph = fig.add_subplot(121)
+        errorPlot = fig.add_subplot(122)
+        # fig.subplots_adjust(left = 0, right = 1, bottom = 0, top = 1)
+        plt.gca().invert_yaxis()
 
     plt.ion()
     plt.show()
