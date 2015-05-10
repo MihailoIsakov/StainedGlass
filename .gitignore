@@ -27,3 +27,8 @@ var/
 .installed.cfg
 *.egg
 
+# project specific
+results/
+images/
+out.svg
+glass

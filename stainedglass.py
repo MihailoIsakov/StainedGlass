@@ -44,6 +44,9 @@ def main(C):
     min_error = 10**16
 
     for cnt in range(10 ** 6):
+        if pixtemp < 0.1:  
+            break
+
         mesh.evolve(pixtemp, absolute_error=C.ABSOLUTE_ERROR, parallel=C.PARALLEL)
 
         # region purging points
@@ -61,6 +64,10 @@ def main(C):
 
         # region print time
         if C.PRINT_CONSOLE:
+            # clear the screen
+            import os
+            os.system('cls' if os.name == 'nt' else 'clear')
+
             print("Temperature: "+str(pixtemp))
             now = time.time()
             print("Time elapsed: ", now - past)

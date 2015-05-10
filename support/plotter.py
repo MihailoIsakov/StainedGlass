@@ -3,10 +3,15 @@ __author__ = 'zieghailo'
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pyl
 import numpy as np
+import matplotlib
+
+matplotlib.use('TkAgg')
+
 
 imagePlot = None
 errorGraph = None
 errorPlot = None
+
 
 def start(size=(20, 10), plotErrors=False):
     global imagePlot, errorGraph, errorPlot
@@ -27,13 +32,15 @@ def start(size=(20, 10), plotErrors=False):
     plt.show()
 
 
+@profile
 def plot_mesh_collection(collection):
+    plt.cla()
     imagePlot.add_collection(collection)
-
     plt.figure(1)
     plt.draw()
 
 
+@profile
 def save_mesh(uri):
     fig = plt.figure(1)
     fig.savefig(uri)
