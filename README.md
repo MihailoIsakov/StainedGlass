@@ -1,4 +1,5 @@
-<h1>Stained Glass is an image polygonization tool</h1> 
+#Stained Glass
+Stained Glass is an image polygonization tool. 
 It uses simulated annealing to find an optimal image configuration for a given number of points.
 
 The algorithm takes in two parameters, the image, and a heuristic image which specifies on which parts the annealing should focus on.
